@@ -3,101 +3,79 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Circle,
-  Dumbbell,
-  LogOut,
-  Plus,
-  Sparkles,
-  BookOpen,
-  Users,
-  Coffee,
-  MoreHorizontal,
-  X,
+  ArrowLeft, ArrowRight, Check, ChevronDown, Clock3, Dumbbell, Edit3,
+  LogOut, Plus, Sparkles, BookOpen, Users, Coffee, MoreHorizontal, Trash2, X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 
 type Category = "Focus" | "Health" | "Life" | "Study";
-type Event = { id: number; title: string; start: string; end: string; category: Category; done?: boolean };
+type Event = { id: number; title: string; start: string; end: string; category: Category; note: string; done: boolean };
 
-const colors: Record<Category, string> = {
-  Focus: "#b99cff",
-  Health: "#8de7c1",
-  Life: "#ffae79",
-  Study: "#8ab7ff",
-};
-
-const initialEvents: Event[] = [
-  { id: 1, title: "Morning reset", start: "07:30", end: "08:00", category: "Health", done: true },
-  { id: 2, title: "Deep work · Biology", start: "09:00", end: "10:30", category: "Study" },
-  { id: 3, title: "Lunch with Maya", start: "12:30", end: "13:15", category: "Life" },
-  { id: 4, title: "Gym session", start: "16:00", end: "17:00", category: "Health" },
-  { id: 5, title: "Read 20 pages", start: "20:30", end: "21:00", category: "Focus" },
+const colors: Record<Category, string> = { Focus: "#c7a6ff", Health: "#8de7c1", Life: "#ffae79", Study: "#8ab7ff" };
+const icons = { Focus: Sparkles, Health: Dumbbell, Life: Users, Study: BookOpen };
+const seed: Event[] = [
+  { id: 1, title: "Morning reset", start: "07:30", end: "08:00", category: "Health", note: "Water, stretch, and get ready without rushing.", done: true },
+  { id: 2, title: "Deep work · Biology", start: "09:00", end: "10:30", category: "Study", note: "Chapter 6 notes and practice questions.", done: false },
+  { id: 3, title: "Lunch with Maya", start: "12:30", end: "13:15", category: "Life", note: "Meet outside the student union.", done: false },
+  { id: 4, title: "Gym session", start: "16:00", end: "17:00", category: "Health", note: "Lower body + 10 min cooldown.", done: false },
+  { id: 5, title: "Read 20 pages", start: "20:30", end: "21:00", category: "Focus", note: "No phone. Just a quiet close to the day.", done: false },
 ];
 
-const categoryIcons = { Focus: Sparkles, Health: Dumbbell, Life: Users, Study: BookOpen };
+function readEvents(): Event[] {
+  try { return JSON.parse(localStorage.getItem("thyme-events") || "null") || seed; } catch { return seed; }
+}
+function minutes(time: string) { const [h, m] = time.split(":").map(Number); return h * 60 + m; }
+function formatTime(time: string) { const [h, m] = time.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`; }
+function duration(event: Event) { return minutes(event.end) - minutes(event.start); }
 
-function formatTime(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  const suffix = hours >= 12 ? "PM" : "AM";
-  const hour = hours % 12 || 12;
-  return `${hour}:${String(minutes).padStart(2, "0")} ${suffix}`;
+function DayWheel({ events, selected, onSelect }: { events: Event[]; selected: number | null; onSelect: (id: number) => void }) {
+  const size = 500, center = size / 2, radius = 178, stroke = 34;
+  const arc = (event: Event) => {
+    const start = (minutes(event.start) / 1440) * Math.PI * 2 - Math.PI / 2;
+    const end = (minutes(event.end) / 1440) * Math.PI * 2 - Math.PI / 2;
+    const r = radius;
+    const x1 = center + r * Math.cos(start), y1 = center + r * Math.sin(start);
+    const x2 = center + r * Math.cos(end), y2 = center + r * Math.sin(end);
+    const large = end - start > Math.PI ? 1 : 0;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
+  };
+  return <div className="relative mx-auto aspect-square w-full max-w-[530px]">
+    <svg viewBox={`0 0 ${size} ${size}`} className="h-full w-full overflow-visible" role="img" aria-label="Circular 24 hour schedule">
+      <circle cx={center} cy={center} r={radius} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth={stroke} />
+      {[0, 6, 12, 18].map((hour) => { const a = hour / 24 * Math.PI * 2 - Math.PI / 2; return <line key={hour} x1={center + (radius - 25) * Math.cos(a)} y1={center + (radius - 25) * Math.sin(a)} x2={center + (radius + 25) * Math.cos(a)} y2={center + (radius + 25) * Math.sin(a)} stroke="rgba(255,255,255,.15)" strokeWidth="1" />; })}
+      {events.map((event) => <motion.path key={event.id} d={arc(event)} fill="none" stroke={colors[event.category]} strokeWidth={selected === event.id ? stroke + 8 : stroke} strokeLinecap="round" opacity={event.done ? .35 : 1} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: .7, ease: "easeOut" }} onMouseEnter={() => onSelect(event.id)} onClick={() => onSelect(event.id)} className="cursor-pointer transition-all" />)}
+      <circle cx={center} cy={center} r="125" fill="#191a1c" stroke="rgba(255,255,255,.08)" />
+      <text x={center} y={center - 15} textAnchor="middle" fill="rgba(255,255,255,.4)" fontSize="12" letterSpacing="3">YOUR DAY</text>
+      <text x={center} y={center + 23} textAnchor="middle" fill="#f5f2ed" fontSize="38" fontWeight="600">24h</text>
+      <text x={center} y={center + 49} textAnchor="middle" fill="rgba(255,255,255,.35)" fontSize="12">tap a block to explore</text>
+    </svg>
+    <span className="absolute left-1/2 top-1 -translate-x-1/2 text-[10px] tracking-[.2em] text-white/30">12 AM</span><span className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] tracking-[.2em] text-white/30">6 PM</span><span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] tracking-[.2em] text-white/30">12 PM</span><span className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] tracking-[.2em] text-white/30">6 AM</span>
+  </div>;
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const [events, setEvents] = useState(initialEvents);
-  const [showComposer, setShowComposer] = useState(false);
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<Category>("Study");
-  const [activeDay, setActiveDay] = useState(2);
-
-  const plannedMinutes = useMemo(() => events.reduce((sum, event) => {
-    const [sh, sm] = event.start.split(":").map(Number);
-    const [eh, em] = event.end.split(":").map(Number);
-    return sum + (eh * 60 + em - sh * 60 - sm);
-  }, 0), [events]);
-
-  const addEvent = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!title.trim()) return;
-    setEvents([...events, { id: Date.now(), title: title.trim(), start: "18:00", end: "18:45", category }].sort((a, b) => a.start.localeCompare(b.start)));
-    setTitle("");
-    setShowComposer(false);
-  };
-
-  const toggleDone = (id: number) => setEvents(events.map((event) => event.id === id ? { ...event, done: !event.done } : event));
+  const { user, signOut } = useAuth(); const navigate = useNavigate();
+  const [events, setEvents] = useState<Event[]>(readEvents); const [selected, setSelected] = useState<number | null>(2); const [editing, setEditing] = useState<Event | null>(null); const [showComposer, setShowComposer] = useState(false); const [view, setView] = useState<"today" | "week">("today");
+  useEffect(() => { localStorage.setItem("thyme-events", JSON.stringify(events)); }, [events]);
+  const planned = useMemo(() => events.reduce((sum, e) => sum + duration(e), 0), [events]); const completed = events.filter(e => e.done).length; const active = events.find(e => e.id === selected) || events[0];
+  const toggle = (id: number) => setEvents(list => list.map(e => e.id === id ? { ...e, done: !e.done } : e));
+  const remove = (id: number) => { setEvents(list => list.filter(e => e.id !== id)); setSelected(null); setEditing(null); };
+  const save = (event: Event) => { setEvents(list => list.some(e => e.id === event.id) ? list.map(e => e.id === event.id ? event : e) : [...list, event].sort((a, b) => a.start.localeCompare(b.start))); setShowComposer(false); setEditing(null); setSelected(event.id); };
   const days = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
-  return (
-    <main className="min-h-screen bg-[#101112] text-[#f5f2ed] selection:bg-[#b99cff]/30">
-      <div className="mx-auto flex min-h-screen max-w-[1380px]">
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-white/[.07] px-7 py-8 lg:flex">
-          <div className="flex items-center gap-3 text-lg font-semibold tracking-tight"><div className="grid size-8 place-items-center rounded-xl bg-[#b99cff] text-[#17121e]"><Sparkles className="size-4" /></div>tempo<span className="text-[#b99cff]">.</span></div>
-          <nav className="mt-16 space-y-2 text-sm">
-            <div className="rounded-xl bg-white/[.08] px-4 py-3 font-medium text-white">Today <span className="float-right text-[#b99cff]">⌘1</span></div>
-            <div className="px-4 py-3 text-white/40">Calendar <span className="float-right">⌘2</span></div>
-          </nav>
-          <div className="mt-auto space-y-5 text-sm text-white/40"><div className="flex items-center gap-3 px-4"><div className="size-2 rounded-full bg-[#8de7c1]" /> All caught up</div><button onClick={async () => { await signOut(); navigate("/"); }} className="flex items-center gap-3 px-4 hover:text-white"><LogOut className="size-4" /> Sign out</button></div>
-        </aside>
-        <section className="flex-1 px-5 py-7 sm:px-10 lg:px-16">
-          <header className="flex items-center justify-between"><div className="lg:hidden flex items-center gap-2 font-semibold text-lg"><div className="grid size-8 place-items-center rounded-xl bg-[#b99cff] text-[#17121e]"><Sparkles className="size-4" /></div>tempo.</div><div className="hidden text-sm text-white/40 sm:block">Wednesday, October 16, 2024</div><div className="flex items-center gap-3"><button className="grid size-9 place-items-center rounded-full border border-white/10 text-sm text-white/60 hover:bg-white/10">{(user?.name || "A").charAt(0).toUpperCase()}</button><button className="text-white/40 hover:text-white"><MoreHorizontal className="size-5" /></button></div></header>
-          <div className="mt-14 flex flex-col justify-between gap-8 sm:flex-row sm:items-end"><div><p className="mb-3 text-sm font-medium uppercase tracking-[.22em] text-[#b99cff]">Wednesday · week 42</p><h1 className="text-5xl font-semibold tracking-[-.06em] sm:text-6xl">Make space<br /><span className="text-white/35">for what matters.</span></h1></div><div className="flex items-center gap-3 text-sm text-white/45"><button className="grid size-9 place-items-center rounded-full border border-white/10 hover:bg-white/10"><ArrowLeft className="size-4" /></button><span>October 2024</span><button className="grid size-9 place-items-center rounded-full border border-white/10 hover:bg-white/10"><ArrowRight className="size-4" /></button></div></div>
-          <div className="mt-12 grid grid-cols-7 border-y border-white/[.08] py-3">{days.map((day, i) => <button key={day} onClick={() => setActiveDay(i)} className={`flex flex-col items-center gap-2 text-[10px] font-semibold tracking-[.2em] ${activeDay === i ? "text-white" : "text-white/30"}`}><span>{day}</span><span className={`grid size-8 place-items-center rounded-full text-sm tracking-normal ${activeDay === i ? "bg-[#b99cff] text-[#17121e]" : ""}`}>{14 + i}</span></button>)}</div>
-          <div className="mt-9 grid gap-12 xl:grid-cols-[1fr_270px]">
-            <div><div className="mb-5 flex items-center justify-between"><div><p className="text-sm text-white/40">Your day</p><p className="mt-1 text-xs text-white/25">{events.length} blocks · {Math.floor(plannedMinutes / 60)}h {plannedMinutes % 60}m planned</p></div><Button onClick={() => setShowComposer(true)} className="rounded-full bg-[#b99cff] text-[#17121e] hover:bg-[#c8b1ff]"><Plus className="size-4" /> Add block</Button></div>
-              <div className="relative ml-2 border-l border-white/[.1] pl-7">{events.map((event, index) => { const Icon = categoryIcons[event.category]; return <motion.div layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * .05 }} key={event.id} className="group relative mb-3"><div className="absolute -left-[33px] top-5 grid size-3 place-items-center rounded-full border-2 border-[#101112]" style={{ backgroundColor: colors[event.category] }} /><div className={`flex items-center justify-between rounded-2xl border border-white/[.07] bg-white/[.035] p-4 transition hover:border-white/20 hover:bg-white/[.06] ${event.done ? "opacity-45" : ""}`}><div className="flex items-center gap-4"><div className="grid size-10 place-items-center rounded-xl" style={{ backgroundColor: `${colors[event.category]}18`, color: colors[event.category] }}><Icon className="size-4" /></div><div><p className={`font-medium ${event.done ? "line-through" : ""}`}>{event.title}</p><p className="mt-1 text-xs text-white/35">{formatTime(event.start)} — {formatTime(event.end)} <span className="mx-1">·</span> {event.category}</p></div></div><button onClick={() => toggleDone(event.id)} className={`grid size-8 place-items-center rounded-full border transition ${event.done ? "border-[#8de7c1] bg-[#8de7c1] text-[#101112]" : "border-white/15 text-transparent hover:border-white/50"}`}><Check className="size-4" /></button></div></motion.div>; })}<button onClick={() => setShowComposer(true)} className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-dashed border-white/10 p-4 text-sm text-white/30 transition hover:border-[#b99cff]/50 hover:text-[#b99cff]"><Plus className="size-4" /> Make room for something else</button></div>
-            </div>
-            <div className="space-y-4"><div className="rounded-2xl border border-white/[.07] bg-white/[.035] p-5"><div className="flex items-center justify-between"><p className="text-sm font-medium">Today in balance</p><Sparkles className="size-4 text-[#b99cff]" /></div><div className="mt-7 flex items-end gap-2"><span className="text-4xl font-semibold tracking-tight">{Math.round((plannedMinutes / 960) * 100)}%</span><span className="mb-1 text-xs text-white/35">of your day planned</span></div><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10"><motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, plannedMinutes / 960 * 100)}%` }} className="h-full rounded-full bg-[#b99cff]" /></div><div className="mt-5 flex justify-between text-xs text-white/35"><span>Focus {Math.round(plannedMinutes / 60 * .55)}h</span><span>Open space {Math.max(0, 16 - Math.round(plannedMinutes / 60))}h</span></div></div><div className="rounded-2xl border border-[#8de7c1]/15 bg-[#8de7c1]/[.06] p-5"><Coffee className="size-4 text-[#8de7c1]" /><p className="mt-5 text-sm leading-6 text-white/75">You have a calm gap after lunch. A good moment for a walk or a reset.</p><button className="mt-4 text-xs font-medium text-[#8de7c1] hover:underline">View open space →</button></div></div>
-          </div>
-        </section>
-      </div>
-      <AnimatePresence>{showComposer && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-20 grid place-items-center bg-black/60 p-5 backdrop-blur-sm"><motion.form initial={{ scale: .95, y: 10 }} animate={{ scale: 1, y: 0 }} onSubmit={addEvent} className="w-full max-w-md rounded-3xl border border-white/10 bg-[#1b1c1e] p-6 shadow-2xl"><div className="mb-7 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.2em] text-[#b99cff]">New block</p><h2 className="mt-2 text-2xl font-semibold">Shape your day.</h2></div><button type="button" onClick={() => setShowComposer(false)} className="text-white/40 hover:text-white"><X className="size-5" /></button></div><label className="text-xs text-white/40">What are you making time for?</label><Input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Study for chemistry" className="mt-2 h-12 border-white/10 bg-white/[.05] text-white placeholder:text-white/20" /><label className="mt-6 block text-xs text-white/40">Category</label><div className="mt-2 grid grid-cols-2 gap-2">{(Object.keys(colors) as Category[]).map((item) => <button type="button" key={item} onClick={() => setCategory(item)} className={`rounded-xl border p-3 text-left text-sm transition ${category === item ? "border-[#b99cff] bg-[#b99cff]/10" : "border-white/10 bg-white/[.03]"}`}><span className="mr-2 inline-block size-2 rounded-full" style={{ backgroundColor: colors[item] }} />{item}</button>)}</div><Button type="submit" className="mt-7 h-12 w-full rounded-xl bg-[#b99cff] text-[#17121e] hover:bg-[#c8b1ff]">Add to my day <ArrowRight className="size-4" /></Button></motion.form></motion.div>}</AnimatePresence>
-    </main>
-  );
+  return <main className="min-h-screen bg-[#101112] text-[#f5f2ed] selection:bg-[#c7a6ff]/30"><div className="mx-auto flex min-h-screen max-w-[1400px]">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-white/[.07] px-7 py-8 lg:flex"><div className="flex items-center gap-3 text-lg font-semibold tracking-tight"><div className="grid size-8 place-items-center rounded-xl bg-[#c7a6ff] text-[#17121e]"><Sparkles className="size-4" /></div>thyme<span className="text-[#c7a6ff]">.</span></div><nav className="mt-16 space-y-2 text-sm"><button onClick={() => setView("today")} className={`w-full rounded-xl px-4 py-3 text-left font-medium ${view === "today" ? "bg-white/[.08] text-white" : "text-white/40"}`}>Today <span className="float-right text-[#c7a6ff]">⌘1</span></button><button onClick={() => setView("week")} className={`w-full rounded-xl px-4 py-3 text-left font-medium ${view === "week" ? "bg-white/[.08] text-white" : "text-white/40"}`}>Week view <span className="float-right">⌘2</span></button></nav><div className="mt-auto space-y-5 text-sm text-white/40"><div className="flex items-center gap-3 px-4"><div className="size-2 rounded-full bg-[#8de7c1]" /> {completed}/{events.length} complete</div><button onClick={async () => { await signOut(); navigate("/"); }} className="flex items-center gap-3 px-4 hover:text-white"><LogOut className="size-4" /> Sign out</button></div></aside>
+    <section className="flex-1 px-5 py-7 sm:px-10 lg:px-14"><header className="flex items-center justify-between"><div className="lg:hidden flex items-center gap-2 font-semibold text-lg"><div className="grid size-8 place-items-center rounded-xl bg-[#c7a6ff] text-[#17121e]"><Sparkles className="size-4" /></div>thyme.</div><div className="hidden text-sm text-white/40 sm:block">Wednesday, October 16, 2024</div><div className="flex items-center gap-3"><button className="grid size-9 place-items-center rounded-full border border-white/10 text-sm text-white/60">{(user?.name || "A").charAt(0).toUpperCase()}</button><button className="text-white/40 hover:text-white"><MoreHorizontal className="size-5" /></button></div></header>
+      <div className="mt-12 flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="mb-3 text-sm font-medium uppercase tracking-[.22em] text-[#c7a6ff]">Wednesday · week 42</p><h1 className="text-5xl font-semibold tracking-[-.07em] sm:text-6xl">Make space<br /><span className="text-white/35">for what matters.</span></h1></div><div className="flex items-center gap-3 text-sm text-white/45"><button className="grid size-9 place-items-center rounded-full border border-white/10 hover:bg-white/10"><ArrowLeft className="size-4" /></button><span>October 2024</span><button className="grid size-9 place-items-center rounded-full border border-white/10 hover:bg-white/10"><ArrowRight className="size-4" /></button></div></div>
+      <div className="mt-10 grid grid-cols-7 border-y border-white/[.08] py-3">{days.map((day, i) => <button key={day} className={`flex flex-col items-center gap-2 text-[10px] font-semibold tracking-[.2em] ${i === 2 ? "text-white" : "text-white/30"}`}><span>{day}</span><span className={`grid size-8 place-items-center rounded-full text-sm tracking-normal ${i === 2 ? "bg-[#c7a6ff] text-[#17121e]" : ""}`}>{14 + i}</span></button>)}</div>
+      {view === "week" ? <div className="mt-10 rounded-3xl border border-white/[.08] bg-white/[.025] p-7"><p className="text-sm text-white/40">Week at a glance</p><div className="mt-6 grid gap-3 sm:grid-cols-7">{days.map((day, i) => <div key={day} className="rounded-2xl bg-white/[.035] p-3"><p className="text-[10px] tracking-widest text-white/35">{day}</p><div className="mt-4 space-y-2">{events.slice(i % 2, i % 2 + 2).map(e => <div key={e.id} className="h-16 rounded-xl p-2 text-[11px]" style={{ backgroundColor: `${colors[e.category]}22`, borderLeft: `2px solid ${colors[e.category]}` }}>{e.title}</div>)}</div></div>)}</div></div> : <div className="mt-10 grid items-center gap-8 xl:grid-cols-[minmax(480px,1fr)_330px]"><div><DayWheel events={events} selected={selected} onSelect={setSelected} /><div className="mt-3 flex flex-wrap justify-center gap-5 text-xs text-white/35">{(Object.keys(colors) as Category[]).map(c => <span key={c} className="flex items-center gap-2"><i className="size-2 rounded-full" style={{ backgroundColor: colors[c] }} />{c}</span>)}</div></div><div className="min-h-[340px] rounded-3xl border border-white/[.08] bg-white/[.035] p-6"><AnimatePresence mode="wait">{active ? <motion.div key={active.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}><div className="flex items-start justify-between"><div className="grid size-11 place-items-center rounded-2xl" style={{ backgroundColor: `${colors[active.category]}20`, color: colors[active.category] }}>{(() => { const Icon = icons[active.category]; return <Icon className="size-5" />; })()}</div><div className="flex gap-2"><button onClick={() => setEditing(active)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white/45 hover:text-white"><Edit3 className="size-4" /></button><button onClick={() => remove(active.id)} className="grid size-9 place-items-center rounded-full border border-white/10 text-white/45 hover:text-[#ff8c8c]"><Trash2 className="size-4" /></button></div></div><p className="mt-7 text-xs uppercase tracking-[.2em]" style={{ color: colors[active.category] }}>{active.category}</p><h2 className={`mt-2 text-2xl font-semibold ${active.done ? "text-white/40 line-through" : ""}`}>{active.title}</h2><p className="mt-2 flex items-center gap-2 text-sm text-white/40"><Clock3 className="size-4" />{formatTime(active.start)} — {formatTime(active.end)} · {duration(active)} min</p><p className="mt-7 text-sm leading-6 text-white/50">{active.note || "No note added for this block."}</p><button onClick={() => toggle(active.id)} className={`mt-8 flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm transition ${active.done ? "border-[#8de7c1]/40 bg-[#8de7c1]/10 text-[#8de7c1]" : "border-white/10 hover:bg-white/[.07]"}`}>{active.done ? <><Check className="size-4" /> Completed</> : "Mark as complete"}</button></motion.div> : <div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center text-white/35"><Clock3 className="mb-4 size-7" /><p>No time blocks yet.</p><button onClick={() => setShowComposer(true)} className="mt-4 text-sm text-[#c7a6ff]">Add your first one →</button></div>}</AnimatePresence></div></div>}
+      <div className="mt-10 flex flex-col justify-between gap-4 border-t border-white/[.08] pt-6 sm:flex-row sm:items-center"><div className="flex gap-8 text-sm"><span className="text-white/35">Planned <b className="ml-2 text-white">{Math.floor(planned / 60)}h {planned % 60}m</b></span><span className="text-white/35">Completed <b className="ml-2 text-[#8de7c1]">{completed}</b></span></div><Button onClick={() => { setEditing(null); setShowComposer(true); }} className="rounded-full bg-[#c7a6ff] text-[#17121e] hover:bg-[#d4baff]"><Plus className="size-4" /> Add time block</Button></div>
+    </section></div><AnimatePresence>{(showComposer || editing) && <Composer event={editing} onClose={() => { setShowComposer(false); setEditing(null); }} onSave={save} />}</AnimatePresence></main>;
+}
+
+function Composer({ event, onClose, onSave }: { event: Event | null; onClose: () => void; onSave: (event: Event) => void }) {
+  const [title, setTitle] = useState(event?.title || ""); const [start, setStart] = useState(event?.start || "18:00"); const [end, setEnd] = useState(event?.end || "18:45"); const [category, setCategory] = useState<Category>(event?.category || "Study"); const [note, setNote] = useState(event?.note || "");
+  const submit = (e: React.FormEvent) => { e.preventDefault(); if (!title.trim() || minutes(end) <= minutes(start)) return; onSave({ id: event?.id || Date.now(), title: title.trim(), start, end, category, note, done: event?.done || false }); };
+  return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-30 grid place-items-center bg-black/65 p-5 backdrop-blur-sm"><motion.form initial={{ scale: .95, y: 10 }} animate={{ scale: 1, y: 0 }} onSubmit={submit} className="w-full max-w-md rounded-3xl border border-white/10 bg-[#1b1c1e] p-6 shadow-2xl"><div className="mb-7 flex items-center justify-between"><div><p className="text-xs uppercase tracking-[.2em] text-[#c7a6ff]">{event ? "Edit block" : "New block"}</p><h2 className="mt-2 text-2xl font-semibold">Shape your day.</h2></div><button type="button" onClick={onClose} className="text-white/40 hover:text-white"><X className="size-5" /></button></div><label className="text-xs text-white/40">Title</label><Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Study for chemistry" className="mt-2 h-12 border-white/10 bg-white/[.05] text-white placeholder:text-white/20" required /><div className="mt-5 grid grid-cols-2 gap-3"><label className="text-xs text-white/40">Start<Input type="time" value={start} onChange={e => setStart(e.target.value)} className="mt-2 border-white/10 bg-white/[.05] text-white" /></label><label className="text-xs text-white/40">End<Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="mt-2 border-white/10 bg-white/[.05] text-white" /></label></div><label className="mt-5 block text-xs text-white/40">Category</label><div className="mt-2 grid grid-cols-2 gap-2">{(Object.keys(colors) as Category[]).map(item => <button type="button" key={item} onClick={() => setCategory(item)} className={`rounded-xl border p-3 text-left text-sm transition ${category === item ? "border-[#c7a6ff] bg-[#c7a6ff]/10" : "border-white/10 bg-white/[.03]"}`}><span className="mr-2 inline-block size-2 rounded-full" style={{ backgroundColor: colors[item] }} />{item}</button>)}</div><label className="mt-5 block text-xs text-white/40">Note <span className="text-white/20">(optional)</span><textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Anything to remember?" className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-white/[.05] p-3 text-sm text-white outline-none placeholder:text-white/20 focus:border-[#c7a6ff]" /></label><Button type="submit" className="mt-6 h-12 w-full rounded-xl bg-[#c7a6ff] text-[#17121e] hover:bg-[#d4baff]">{event ? "Save changes" : "Add to my day"} <ArrowRight className="size-4" /></Button></motion.form></motion.div>;
 }

@@ -1,6 +1,7 @@
 /* DO NOT CHANGE */
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap');
 @custom-variant dark (&:is(.dark *));
 
 /* DO NOT CHANGE */
@@ -118,7 +119,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Manrope', sans-serif;
   }
+  button, input, textarea { font-family: inherit; }
+  .font-mono { font-family: 'DM Mono', monospace; }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
