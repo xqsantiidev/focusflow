@@ -188,8 +188,9 @@ function SketchCircle({
           return (
             <g key={ev.id}>
               <motion.path d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
-                initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: i * 0.03, duration: 0.3 }}
+                initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
+                whileHover={{ scale: 1.02 }}
                 className="cursor-pointer" onClick={e => { e.stopPropagation(); onSelect(ev.id); }}
                 style={{ transformOrigin: `${C}px ${C}px` }} />
               {/* Resize handles */}
@@ -302,23 +303,31 @@ export default function Dashboard() {
       <div className="mx-auto flex min-h-screen max-w-[620px] flex-col px-5 pb-10 pt-6 sm:px-8">
 
         {/* Header */}
-        <header className="flex items-center justify-between">
-          <button onClick={() => setDate(new Date(2024, 9, 16))} className="sketch-link flex items-center gap-2 text-xl font-bold">
+        <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+          className="flex items-center justify-between">
+          <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={() => setDate(new Date(2024, 9, 16))} className="sketch-link flex items-center gap-2 text-xl font-bold">
             thyme<span className="text-[#e55b5b]">.</span>
-          </button>
+          </motion.button>
           <div className="flex items-center gap-3">
-            <button onClick={() => setHeatMap(!heatMap)} className={`sketch-btn-icon size-8 ${heatMap ? "bg-[#e55b5b]/10 border-[#e55b5b]" : ""}`} title="Heat map">
+            <motion.button whileHover={{ scale: 1.08, rotate: 5 }} whileTap={{ scale: 0.9 }}
+              onClick={() => setHeatMap(!heatMap)} className={`sketch-btn-icon size-8 ${heatMap ? "bg-[#e55b5b]/10 border-[#e55b5b]" : ""}`} title="Heat map">
               <svg viewBox="0 0 16 16" className="size-3.5"><rect x="1" y="10" width="3" height="5" rx="0.5" fill="currentColor" opacity=".3" /><rect x="5" y="7" width="3" height="8" rx="0.5" fill="currentColor" opacity=".6" /><rect x="9" y="4" width="3" height="11" rx="0.5" fill="currentColor" opacity=".8" /><rect x="13" y="1" width="3" height="14" rx="0.5" fill="currentColor" /></svg>
-            </button>
-            <button onClick={() => setDark(!dark)} className="sketch-btn-icon size-8" title="Toggle dark mode">
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.08, rotate: 180 }} whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              onClick={() => setDark(!dark)} className="sketch-btn-icon size-8" title="Toggle dark mode">
               {dark ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-            </button>
-            <button onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</button>
-            <button onClick={async () => { await signOut(); navigate("/"); }} className="sketch-link flex items-center gap-1.5 text-xs">
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.08, rotate: 30 }} whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 15 }}
+              onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</motion.button>
+            <motion.button whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}
+              onClick={async () => { await signOut(); navigate("/"); }} className="sketch-link flex items-center gap-1.5 text-xs">
               <LogOut className="size-3.5" /> sign out
-            </button>
+            </motion.button>
           </div>
-        </header>
+        </motion.header>
 
         {/* Settings panel */}
         <AnimatePresence>
@@ -348,50 +357,62 @@ export default function Dashboard() {
         </AnimatePresence>
 
         {/* Day navigation */}
-        <div className="mt-8 flex items-center justify-between">
-          <button onClick={() => moveDay(-1)} className="sketch-btn-icon"><ChevronLeft className="size-5" /></button>
-          <div className="text-center">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}
+          className="mt-8 flex items-center justify-between">
+          <motion.button whileHover={{ scale: 1.1, x: -3 }} whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            onClick={() => moveDay(-1)} className="sketch-btn-icon"><ChevronLeft className="size-5" /></motion.button>
+          <motion.div key={`${date.toDateString()}-date`} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }} className="text-center">
             <p className="sketch-label text-lg">{weekday}</p>
             <h1 className="sketch-title text-5xl mt-1">{date.getDate()} <span className="text-[var(--sketch-muted)]">{month}</span></h1>
             <p className="sketch-label text-xs mt-1 opacity-50">{date.getFullYear()}</p>
-          </div>
-          <button onClick={() => moveDay(1)} className="sketch-btn-icon"><ChevronRight className="size-5" /></button>
-        </div>
+          </motion.div>
+          <motion.button whileHover={{ scale: 1.1, x: 3 }} whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            onClick={() => moveDay(1)} className="sketch-btn-icon"><ChevronRight className="size-5" /></motion.button>
+        </motion.div>
 
         {/* Week dots */}
         <div className="mt-5 flex justify-center gap-3">
-          {[-3, -2, -1, 0, 1, 2, 3].map(offset => {
+          {[-3, -2, -1, 0, 1, 2, 3].map((offset, i) => {
             const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset);
             const isToday = offset === 0;
             const initial = d.toLocaleDateString("en-US", { weekday: "narrow" });
             return (
-              <button key={offset} onClick={() => setDate(d)}
+              <motion.button key={offset} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.04, type: "spring", stiffness: 300, damping: 20 }}
+                whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.9 }}
+                onClick={() => setDate(d)}
                 className={`sketch-pill ${isToday ? "sketch-pill-active" : ""}`}>
                 <span className="text-[10px] uppercase">{initial}</span>
                 <span className="text-sm font-bold">{d.getDate()}</span>
-              </button>
+              </motion.button>
             );
           })}
         </div>
 
         {/* Circle */}
-        <div className="mt-8">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
+          className="mt-8">
           <SketchCircle events={events} selected={selected} onSelect={setSelected} palette={palette} heatMap={heatMap}
             onEmpty={time => setEditing({ id: 0, title: "", start: time, end: minToStr(clamp(toMin(time) + 45, 0, 1439)), category: "Study", note: "", repeat: [], color: undefined })}
             onDragEnd={handleDragEnd} />
-        </div>
+        </motion.div>
 
         {/* Legend */}
-        <p className="mt-1 text-center text-[10px] uppercase tracking-[.18em] text-[var(--sketch-muted)] opacity-50">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} transition={{ delay: 0.4 }}
+          className="mt-1 text-center text-[10px] uppercase tracking-[.18em] text-[var(--sketch-muted)]">
           tap to select · drag edges to resize · tap empty to add
-        </p>
+        </motion.p>
 
         {/* Category legend */}
-        <div className="mt-4 flex items-center justify-center gap-5 text-[9px] uppercase tracking-[.15em] text-[var(--sketch-muted)] opacity-60">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} transition={{ delay: 0.45 }}
+          className="mt-4 flex items-center justify-center gap-5 text-[9px] uppercase tracking-[.15em] text-[var(--sketch-muted)]">
           {Object.keys(palette).map(c => (
             <span key={c} className="flex items-center gap-1.5"><i className="size-2 rounded-sm" style={{ backgroundColor: palette[c] }} />{c}</span>
           ))}
-        </div>
+        </motion.div>
 
         {/* Selected detail */}
         <AnimatePresence>
@@ -413,39 +434,48 @@ export default function Dashboard() {
               </div>
               {active.note && <p className="sketch-body text-sm mt-3 opacity-60">{active.note}</p>}
               <div className="flex gap-2 mt-4">
-                <button onClick={() => setEditing(active)} className="sketch-btn"><Edit3 className="size-3.5" /> edit</button>
-                <button onClick={() => addTemplate(active)} className="sketch-btn"><Bookmark className="size-3.5" /> save as template</button>
-                <button onClick={() => remove(active.id)} className="sketch-btn sketch-btn-danger"><Trash2 className="size-3.5" /> remove</button>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setEditing(active)} className="sketch-btn"><Edit3 className="size-3.5" /> edit</motion.button>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => addTemplate(active)} className="sketch-btn"><Bookmark className="size-3.5" /> save as template</motion.button>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => remove(active.id)} className="sketch-btn sketch-btn-danger"><Trash2 className="size-3.5" /> remove</motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* FABs */}
-        <div className="flex justify-center gap-3 mt-6">
-          <button onClick={() => setShowTemplates(true)} className="sketch-btn"><Bookmark className="size-3.5" /> templates</button>
-          <button onClick={() => setEditing({ id: 0, title: "", start: "12:00", end: "12:45", category: "Study", note: "", repeat: [], color: undefined })} className="sketch-fab">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, type: "spring", stiffness: 200, damping: 18 }}
+          className="flex justify-center gap-3 mt-6">
+          <motion.button whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}
+            onClick={() => setShowTemplates(true)} className="sketch-btn"><Bookmark className="size-3.5" /> templates</motion.button>
+          <motion.button whileHover={{ scale: 1.08, rotate: 90 }} whileTap={{ scale: 0.9, rotate: 45 }}
+            transition={{ type: "spring", stiffness: 300, damping: 12 }}
+            onClick={() => setEditing({ id: 0, title: "", start: "12:00", end: "12:45", category: "Study", note: "", repeat: [], color: undefined })} className="sketch-fab">
             <Plus className="size-5" />
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Template picker */}
         <AnimatePresence>
           {showTemplates && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]">
-              <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 22 }}
                 className="composer w-full max-w-md">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="sketch-title text-xl">templates</h2>
-                  <button onClick={() => setShowTemplates(false)} className="sketch-btn-icon size-8"><X className="size-4" /></button>
+                  <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowTemplates(false)} className="sketch-btn-icon size-8"><X className="size-4" /></motion.button>
                 </div>
                 {templates.length === 0 ? (
                   <p className="sketch-body text-sm opacity-50 py-6 text-center">no templates yet — create a block and save it as a template.</p>
                 ) : (
                   <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-                    {templates.map(t => (
-                      <button key={t.id} onClick={() => applyTemplate(t)}
+                    {templates.map((t, i) => (
+                      <motion.button key={t.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        whileHover={{ scale: 1.02, x: 4 }} whileTap={{ scale: 0.98 }}
+                        onClick={() => applyTemplate(t)}
                         className="w-full flex items-center gap-3 rounded-xl border border-[var(--sketch-border)] p-3 text-left hover:bg-[var(--sketch-hover)] transition">
                         <span className="sketch-dot" style={{ backgroundColor: t.color || palette[t.category] }} />
                         <div className="flex-1 min-w-0">
@@ -454,7 +484,7 @@ export default function Dashboard() {
                         </div>
                         <button onClick={e => { e.stopPropagation(); setTemplates(list => list.filter(x => x.id !== t.id)); }}
                           className="text-[var(--sketch-muted)] opacity-40 hover:opacity-100"><Trash2 className="size-3" /></button>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 )}
