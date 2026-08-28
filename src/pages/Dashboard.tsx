@@ -626,7 +626,7 @@ export default function Dashboard() {
 
         {/* Legend */}
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} transition={{ delay: 0.4 }}
-          className="mt-1 text-center text-[10px] uppercase tracking-[.18em] text-[var(--sketch-muted)]">
+          className="mt-5 text-center text-[10px] uppercase tracking-[.18em] text-[var(--sketch-muted)]">
           tap to select · drag edges to resize · tap empty to add
         </motion.p>
 
