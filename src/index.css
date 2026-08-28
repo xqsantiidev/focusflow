@@ -2,6 +2,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&display=swap');
+@font-face {
+  font-family: 'Monday Feelings';
+  src: url('/fonts/monday-feelings.ttf') format('truetype'), url('/fonts/monday-feelings.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   * { scroll-behavior: smooth; }

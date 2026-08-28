@@ -78,6 +78,7 @@ function SketchCircle({
   const timeToAngle = (mins: number) => (mins / 1440) * Math.PI * 2 - Math.PI / 2;
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
+  const [dragTick, setDragTick] = useState(0);
   const justDraggedRef = useRef(false);
   const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
   /* Animated angles for smooth DOM updates during drag */
@@ -150,6 +151,7 @@ function SketchCircle({
       animAngles.current.set(ev.id, { start: newStart, end: newEnd });
       const path = pathRefs.current.get(ev.id);
       if (path) path.setAttribute("d", buildPath(newStart, newEnd));
+      setDragTick(t => t + 1);
     }
   };
   const handlePointerUp = () => {
@@ -273,10 +275,10 @@ function SketchCircle({
               <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.35" />
               {/* Background pill for title readability */}
               <rect x={lx - 4} y={ly - 22} width={Math.max(ev.title.length * 8.5, 60)} height="18" rx="4" fill="var(--sketch-bg)" opacity="0.9" transform={`translate(${-Math.max(ev.title.length * 8.5, 60) / 2 + 4}, 0)`} />
-              {/* Title — handwritten Caveat */}
-              <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="16" fill="var(--sketch-fg)" fontWeight="700" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
-              {/* Time — also handwritten, slightly smaller */}
-              <text x={lx} y={ly + 10} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="12.5" fill="var(--sketch-fg)" fontWeight="600" opacity="0.85">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
+              {/* Title — Monday Feelings */}
+              <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'Monday Feelings', 'Caveat', cursive" fontSize="17" fill="var(--sketch-fg)" fontWeight="400" style={{ letterSpacing: '0.01em' }}>{ev.title}</text>
+              {/* Time — Monday Feelings */}
+              <text x={lx} y={ly + 12} textAnchor="middle" fontFamily="'Monday Feelings', 'Caveat', cursive" fontSize="12" fill="var(--sketch-fg)" fontWeight="400" opacity="0.8">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
               <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" />
             </g>
           );
