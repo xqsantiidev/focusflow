@@ -6,17 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 /* ── Types ─────────────────────────────────────────────────── */
-type Category = "Class" | "Study" | "Health" | "Life" | "Commute" | "Free";
-type Event = { id: number; title: string; start: string; end: string; category: Category; note: string; repeat: number[]; color?: string };
-type Template = { id: number; title: string; start: string; end: string; category: Category; note: string; color?: string };
+type Event = { id: number; title: string; start: string; end: string; category: string; note: string; repeat: number[]; color?: string };
+type Template = { id: number; title: string; start: string; end: string; category: string; note: string; color?: string };
+type Palette = Record<string, string>;
 
 /* ── Palette (defaults) ───────────────────────────────────── */
-const defaultPalette: Record<Category, string> = { Class: "#4caf50", Study: "#ffc107", Health: "#e91e63", Life: "#9c27b0", Commute: "#2196f3", Free: "#b0bec5" };
+const builtInPalette: Palette = { Class: "#4caf50", Study: "#ffc107", Health: "#e91e63", Life: "#9c27b0", Commute: "#2196f3", Free: "#b0bec5" };
 const fallbackColor = "#b0bec5";
-const getColor = (ev: Event, palette: Record<Category, string>) => ev.color || palette[ev.category] || fallbackColor;
-const getCatColor = (cat: Category, palette: Record<Category, string>) => palette[cat] || fallbackColor;
-
-const categoryIcons: Record<Category, React.FC<{ className?: string }>> = { Class: BookOpen, Study: Sparkles, Health: Dumbbell, Life: Users, Commute: ChevronRight, Free: Sparkles };
+const getColor = (ev: Event, palette: Palette) => ev.color || palette[ev.category] || fallbackColor;
+const iconMap: Record<string, React.FC<{ className?: string }>> = { Class: BookOpen, Study: Sparkles, Health: Dumbbell, Life: Users, Commute: ChevronRight, Free: Sparkles };
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /* ── Helpers ───────────────────────────────────────────────── */
@@ -50,8 +48,8 @@ function loadEvents(date: Date): Event[] {
 function saveEvents(date: Date, events: Event[]) { localStorage.setItem(keyFor(date), JSON.stringify(events)); }
 function loadTemplates(): Template[] { try { return JSON.parse(localStorage.getItem("thyme-templates") || "[]"); } catch { return []; } }
 function saveTemplates(t: Template[]) { localStorage.setItem("thyme-templates", JSON.stringify(t)); }
-function loadPalette(): Record<Category, string> { try { return JSON.parse(localStorage.getItem("thyme-palette") || "null") || defaultPalette; } catch { return defaultPalette; } }
-function savePalette(p: Record<Category, string>) { localStorage.setItem("thyme-palette", JSON.stringify(p)); }
+function loadPalette(): Palette { try { return { ...builtInPalette, ...JSON.parse(localStorage.getItem("thyme-palette") || "{}") }; } catch { return { ...builtInPalette }; } }
+function savePalette(p: Palette) { localStorage.setItem("thyme-palette", JSON.stringify(p)); }
 
 const defaultDay: Event[] = [
   { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "", repeat: [], color: undefined },
@@ -72,7 +70,7 @@ function SketchCircle({
   events, selected, onSelect, onEmpty, palette, heatMap, onDragEnd,
 }: {
   events: Event[]; selected: number | null; onSelect: (id: number) => void;
-  onEmpty: (time: string) => void; palette: Record<Category, string>;
+  onEmpty: (time: string) => void; palette: Palette;
   heatMap: boolean; onDragEnd: (id: number, newStart: string, newEnd: string) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -156,18 +154,6 @@ function SketchCircle({
           <filter id="sketch"><feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="3" result="warp" /><feDisplacementMap in="SourceGraphic" in2="warp" scale="1.5" /></filter>
         </defs>
 
-        {/* Heat map ring */}
-        {heatMap && heatData.map((count, i) => {
-          if (count === 0) return null;
-          const a1 = (i / 96) * Math.PI * 2 - Math.PI / 2;
-          const a2 = ((i + 1) / 96) * Math.PI * 2 - Math.PI / 2;
-          const r = innerR - 6;
-          const [x1, y1] = pt(r, a1);
-          const [x2, y2] = pt(r, a2);
-          const opacity = 0.08 + (count / maxHeat) * 0.35;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#e55b5b" strokeWidth="10" opacity={opacity} strokeLinecap="round" />;
-        })}
-
         {/* Outer dotted guide */}
         <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="1.5" strokeDasharray="3 8" opacity="0.3" />
 
@@ -224,6 +210,17 @@ function SketchCircle({
 
         {/* Inner circle */}
         <circle cx={C} cy={C} r={innerR} fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="2.5" filter="url(#sketch)" />
+
+        {/* Heat map ring (rendered on top) */}
+        {heatMap && heatData.map((count, i) => {
+          if (count === 0) return null;
+          const mid = ((i + 0.5) / 96) * Math.PI * 2 - Math.PI / 2;
+          const r = innerR + 18;
+          const [cx, cy] = pt(r, mid);
+          const opacity = 0.2 + (count / maxHeat) * 0.6;
+          const size = 3 + (count / maxHeat) * 5;
+          return <circle key={`heat-${i}`} cx={cx} cy={cy} r={size} fill="#e55b5b" opacity={opacity} />;
+        })}
       </svg>
     </div>
   );
@@ -236,7 +233,7 @@ export default function Dashboard() {
   const [events, setEvents] = useState<Event[]>(() => loadEvents(new Date(2024, 9, 16)));
   const [selected, setSelected] = useState<number | null>(null);
   const [editing, setEditing] = useState<Event | null>(null);
-  const [palette, setPalette] = useState<Record<Category, string>>(loadPalette);
+  const [palette, setPalette] = useState<Palette>(loadPalette);
   const [templates, setTemplates] = useState<Template[]>(loadTemplates);
   const [dark, setDark] = useState(() => document.documentElement.classList.contains("dark"));
   const [heatMap, setHeatMap] = useState(false);
@@ -295,7 +292,10 @@ export default function Dashboard() {
     setEditing({ id: 0, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, repeat: [], color: t.color });
     setShowTemplates(false);
   };
-  const updateColor = (cat: Category, color: string) => setPalette(p => ({ ...p, [cat]: color }));
+  const updateColor = (cat: string, color: string) => setPalette(p => ({ ...p, [cat]: color }));
+  const addCategory = (name: string) => { if (name.trim() && !palette[name.trim()]) { setPalette(p => ({ ...p, [name.trim()]: fallbackColor })); } };
+  const removeCategory = (cat: string) => { if (builtInPalette[cat]) return; setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
+  const [newCatName, setNewCatName] = useState("");
 
   return (
     <main className="sketchbook">
@@ -326,15 +326,21 @@ export default function Dashboard() {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden mt-4">
               <div className="sketch-card">
-                <p className="sketch-label text-xs mb-3">customize colors</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {(Object.keys(palette) as Category[]).map(cat => (
-                    <label key={cat} className="flex items-center gap-2 text-xs">
-                      <input type="color" value={palette[cat]} onChange={e => updateColor(cat, e.target.value)}
-                        className="size-6 cursor-pointer rounded border-0 bg-transparent" />
-                      <span className="sketch-label">{cat}</span>
-                    </label>
+                <p className="sketch-label text-xs mb-3">customize categories & colors</p>
+                <div className="space-y-2 mb-4">
+                  {Object.keys(palette).map(cat => (
+                    <div key={cat} className="flex items-center gap-2 text-xs">
+                      <input type="color" value={palette[cat]} onChange={e => updateColor(cat, e.target.value)} className="size-6 cursor-pointer rounded border-0 bg-transparent" />
+                      <span className="sketch-label flex-1">{cat}</span>
+                      {!builtInPalette[cat] && (
+                        <button onClick={() => removeCategory(cat)} className="text-[var(--sketch-muted)] opacity-40 hover:opacity-100 hover:text-[#e55b5b]"><Trash2 className="size-3" /></button>
+                      )}
+                    </div>
                   ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="new category name" className="sketch-input flex-1" onKeyDown={e => { if (e.key === "Enter" && newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} />
+                  <button onClick={() => { if (newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} className="sketch-btn-icon size-9"><Plus className="size-3.5" /></button>
                 </div>
               </div>
             </motion.div>
@@ -382,7 +388,7 @@ export default function Dashboard() {
 
         {/* Category legend */}
         <div className="mt-4 flex items-center justify-center gap-5 text-[9px] uppercase tracking-[.15em] text-[var(--sketch-muted)] opacity-60">
-          {(Object.keys(palette) as Category[]).map(c => (
+          {Object.keys(palette).map(c => (
             <span key={c} className="flex items-center gap-1.5"><i className="size-2 rounded-sm" style={{ backgroundColor: palette[c] }} />{c}</span>
           ))}
         </div>
@@ -468,11 +474,11 @@ export default function Dashboard() {
 }
 
 /* ── Composer ──────────────────────────────────────────────── */
-function Composer({ event, onClose, onSave, palette }: { event: Event; onClose: () => void; onSave: (ev: Event) => void; palette: Record<Category, string> }) {
+function Composer({ event, onClose, onSave, palette }: { event: Event; onClose: () => void; onSave: (ev: Event) => void; palette: Palette }) {
   const [title, setTitle] = useState(event.title);
   const [start, setStart] = useState(event.start);
   const [end, setEnd] = useState(event.end);
-  const [category, setCategory] = useState<Category>(event.category);
+  const [category, setCategory] = useState(event.category);
   const [note, setNote] = useState(event.note);
   const [repeat, setRepeat] = useState<number[]>(event.repeat || []);
   const [color, setColor] = useState(event.color || palette[event.category]);
@@ -505,7 +511,7 @@ function Composer({ event, onClose, onSave, palette }: { event: Event; onClose: 
 
         <label className="sketch-label text-xs mt-4 block">category</label>
         <div className="grid grid-cols-3 gap-2 mt-1.5">
-          {(Object.keys(palette) as Category[]).map(cat => (
+          {Object.keys(palette).map(cat => (
             <button type="button" key={cat} onClick={() => { setCategory(cat); if (!useCustomColor) setColor(palette[cat]); }}
               className={`sketch-chip ${category === cat ? "sketch-chip-active" : ""}`}>
               <span className="sketch-dot" style={{ backgroundColor: palette[cat] }} />{cat}
