@@ -272,8 +272,14 @@ function SketchCircle({
           const nearby = events.filter(o => o.id !== ev.id && Math.abs(toMin(o.start) - toMin(ev.start)) < 90);
           const nearbyCount = nearby.length;
           const spread = (gap < 30 ? 1.2 : gap < 60 ? 1.1 : 1.0) + nearbyCount * 0.1;
-          const midR = (outerR + 86) * spread;
-          const [lx, ly] = pt(midR, midA);
+          /* Keep labels in a dedicated outer lane. A deterministic vertical nudge
+             prevents neighboring callouts from landing on the hint/legend below. */
+          const side = Math.sin(midA) >= 0 ? 1 : -1;
+          const laneNudge = nearbyCount * 18 + (i % 2) * 10;
+          const midR = (outerR + 98) * spread;
+          const [rawLx, rawLy] = pt(midR, midA);
+          const lx = clamp(rawLx, 34, S - 34);
+          const ly = clamp(rawLy + side * laneNudge, 26, S - 26);
           const [ax, ay] = pt(outerR + 14, midA);
           const isSel = selected === ev.id;
           const isDraggingThis = dragging?.eventId === ev.id;
@@ -626,13 +632,13 @@ export default function Dashboard() {
 
         {/* Legend */}
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} transition={{ delay: 0.4 }}
-          className="mt-5 text-center text-[10px] uppercase tracking-[.18em] text-[var(--sketch-muted)]">
+          className="mt-10 text-center text-[10px] uppercase tracking-[.18em] text-[var(--sketch-muted)]">
           tap to select · drag edges to resize · tap empty to add
         </motion.p>
 
         {/* Category legend */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} transition={{ delay: 0.45 }}
-          className="mt-4 flex items-center justify-center gap-5 text-[9px] uppercase tracking-[.15em] text-[var(--sketch-muted)]">
+          className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[9px] uppercase tracking-[.15em] text-[var(--sketch-muted)]">
           {Object.keys(palette).map(c => (
             <span key={c} className="flex items-center gap-1.5"><i className="size-2 rounded-sm" style={{ backgroundColor: palette[c] }} />{c}</span>
           ))}
