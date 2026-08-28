@@ -223,20 +223,27 @@ function SketchCircle({
           return <circle key={`heat-${i}`} cx={cx} cy={cy} r={size} fill="#e55b5b" opacity={opacity} />;
         })}
 
-        {/* Now indicator — small pulsing dot on the ring at current time */}
+        {/* Now indicator — pulsing red dot on the inner ring at current time */}
         {(() => {
           const now = new Date();
           const nowMins = now.getHours() * 60 + now.getMinutes();
           const a = timeToAngle(nowMins);
-          const [nx, ny] = pt(outerR + 14, a);
-          const [nx2, ny2] = pt(outerR + 30, a);
+          const nowR = innerR + 14;
+          const [nx, ny] = pt(nowR, a);
           return (
             <g>
-              <line x1={nx} y1={ny} x2={nx2} y2={ny2} stroke="#e55b5b" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
-              <circle cx={nx} cy={ny} r="4" fill="#e55b5b">
-                <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2s" repeatCount="indefinite" />
+              {/* Glow ring behind the dot */}
+              <circle cx={nx} cy={ny} r="12" fill="none" stroke="#e55b5b" strokeWidth="1.5" opacity="0.3">
+                <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
               </circle>
+              {/* Main dot — larger, more visible */}
+              <circle cx={nx} cy={ny} r="6" fill="#e55b5b">
+                <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite" />
+              </circle>
+              {/* Inner highlight */}
+              <circle cx={nx} cy={ny} r="2.5" fill="#fff" opacity="0.7" />
             </g>
           );
         })()}
