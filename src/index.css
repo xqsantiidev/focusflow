@@ -160,8 +160,18 @@
 .sketch-body {
   font-family: 'Space Mono', monospace;
   font-weight: 400;
+  font-size: 0.94em;
+  letter-spacing: -0.025em;
   color: var(--sketch-muted);
-  line-height: 1.6;
+  line-height: 1.7;
+}
+.hero-copy {
+  font-family: 'Space Mono', monospace;
+  font-variant-ligatures: none;
+  font-size: 0.92rem;
+  letter-spacing: -0.03em;
+  line-height: 1.75;
+  color: var(--sketch-muted);
 }
 .sketch-link {
   font-family: 'Space Mono', monospace;

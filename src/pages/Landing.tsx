@@ -21,7 +21,7 @@ export default function Landing() {
             your day,<br />
             <span className="text-[#8a8678]">drawn out.</span>
           </h1>
-          <p className="sketch-body text-lg mt-6 max-w-sm leading-relaxed opacity-60">
+          <p className="hero-copy text-lg mt-6 max-w-sm opacity-80">
             thyme is a daily planner that turns your schedule into a hand-drawn circle — colorful, creative, and yours.
           </p>
           <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-8">
