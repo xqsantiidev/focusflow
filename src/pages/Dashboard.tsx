@@ -79,6 +79,10 @@ function SketchCircle({
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
   const justDraggedRef = useRef(false);
+  const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
+  /* Animated angles for smooth DOM updates during drag */
+  const animAngles = useRef<Map<number, { start: number; end: number }>>(new Map());
+  const animFrameRef = useRef<number>(0);
 
   const getEventAt = (x: number, y: number) => {
     const r = Math.hypot(x, y);
@@ -106,10 +110,22 @@ function SketchCircle({
     onEmpty(minToStr(mins));
   };
 
-  /* Drag-to-resize */
+  /* Build SVG path string from start/end minutes */
+  const buildPath = (sMin: number, eMin: number) => {
+    const sa = timeToAngle(sMin); const ea = timeToAngle(eMin);
+    const [ix1, iy1] = pt(innerR, sa); const [ox1, oy1] = pt(outerR, sa);
+    const [ix2, iy2] = pt(innerR, ea); const [ox2, oy2] = pt(outerR, ea);
+    const large = ea - sa > Math.PI ? 1 : 0;
+    return `M ${ix1} ${iy1} L ${ox1} ${oy1} A ${outerR} ${outerR} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`;
+  };
+  /* Spring-bounce interpolation for smooth visual resize */
+  const springLerp = (current: number, target: number, speed = 0.18) => current + (target - current) * speed;
+
   const handlePointerDown = (e: React.PointerEvent, eventId: number, edge: "start" | "end") => {
     e.stopPropagation();
     (e.target as SVGElement).setPointerCapture(e.pointerId);
+    const ev = events.find(ev2 => ev2.id === eventId);
+    if (ev) animAngles.current.set(eventId, { start: toMin(ev.start), end: toMin(ev.end) });
     setDragging({ eventId, edge });
   };
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -119,19 +135,53 @@ function SketchCircle({
     if (r < innerR || r > outerR + 60) return;
     let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2;
     const mins = round15(a / (Math.PI * 2) * 1440);
-    const ev = events.find(e => e.id === dragging.eventId);
+    const ev = events.find(ev2 => ev2.id === dragging.eventId);
     if (!ev) return;
+    const cur = animAngles.current.get(ev.id);
+    if (!cur) return;
+    const startMin = cur.start; const endMin = cur.end;
+    let newStart = startMin, newEnd = endMin;
     if (dragging.edge === "start") {
-      const endMin = toMin(ev.end);
-      if (mins < endMin && endMin - mins >= 15) onDragEnd(ev.id, minToStr(mins), ev.end);
+      if (mins < endMin && endMin - mins >= 15) newStart = mins;
     } else {
-      const startMin = toMin(ev.start);
-      if (mins > startMin && mins - startMin >= 15) onDragEnd(ev.id, ev.start, minToStr(mins));
+      if (mins > startMin && mins - startMin >= 15) newEnd = mins;
+    }
+    if (newStart !== startMin || newEnd !== endMin) {
+      animAngles.current.set(ev.id, { start: newStart, end: newEnd });
+      const path = pathRefs.current.get(ev.id);
+      if (path) path.setAttribute("d", buildPath(newStart, newEnd));
     }
   };
-  const handlePointerUp = () => { if (dragging) justDraggedRef.current = true; setDragging(null); };
-  /* Reset the guard after the click handler has had a chance to run */
-  useEffect(() => { if (justDraggedRef.current) { const t = setTimeout(() => { justDraggedRef.current = false; }, 50); return () => clearTimeout(t); } });
+  const handlePointerUp = () => {
+    if (dragging) {
+      justDraggedRef.current = true;
+      const ev = events.find(ev2 => ev2.id === dragging.eventId);
+      const cur = ev ? animAngles.current.get(ev.id) : null;
+      if (ev && cur) {
+        const snapS = round15(cur.start); const snapE = round15(cur.end);
+        /* Animate bounce-back to snapped position */
+        const targetStart = snapS, targetEnd = snapE;
+        const path = pathRefs.current.get(ev.id);
+        let frameS = cur.start, frameE = cur.end;
+        const animate = () => {
+          frameS = springLerp(frameS, targetStart, 0.2);
+          frameE = springLerp(frameE, targetEnd, 0.2);
+          if (path) path.setAttribute("d", buildPath(frameS, frameE));
+          if (Math.abs(frameS - targetStart) > 0.3 || Math.abs(frameE - targetEnd) > 0.3) {
+            animFrameRef.current = requestAnimationFrame(animate);
+          } else {
+            if (path) path.setAttribute("d", buildPath(targetStart, targetEnd));
+            animAngles.current.set(ev.id, { start: targetStart, end: targetEnd });
+            onDragEnd(ev.id, minToStr(targetStart), minToStr(targetEnd));
+          }
+        };
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = requestAnimationFrame(animate);
+      }
+    }
+    setDragging(null);
+  };
+  useEffect(() => { if (justDraggedRef.current) { const t = setTimeout(() => { justDraggedRef.current = false; }, 80); return () => clearTimeout(t); } });
 
   /* Heat map data: density per 15-min slot */
   const heatData = Array.from({ length: 96 }, (_, i) => {
@@ -176,13 +226,14 @@ function SketchCircle({
 
         {/* Wedge segments */}
         {events.map((ev, i) => {
-          const s = timeToAngle(toMin(ev.start)); const e2 = timeToAngle(toMin(ev.end));
-          const [ix1, iy1] = pt(innerR, s); const [ox1, oy1] = pt(outerR, s);
-          const [ix2, iy2] = pt(innerR, e2); const [ox2, oy2] = pt(outerR, e2);
-          const large = e2 - s > Math.PI ? 1 : 0;
-          const d = `M ${ix1} ${iy1} L ${ox1} ${oy1} A ${outerR} ${outerR} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`;
+          const a = animAngles.current.get(ev.id);
+          const sMin = a ? a.start : toMin(ev.start);
+          const eMin = a ? a.end : toMin(ev.end);
+          const d = buildPath(sMin, eMin);
           const color = getColor(ev, palette);
           const fill = ev.category === "Commute" ? "url(#pat-stripe)" : ev.category === "Free" ? "url(#pat-dots)" : color;
+          const s = timeToAngle(sMin); const e2 = timeToAngle(eMin);
+          const [ox1, oy1] = pt(outerR, s); const [ox2, oy2] = pt(outerR, e2);
           const midA = (s + e2) / 2;
           /* Spread labels outward based on proximity to other labels */
           const gap = Math.abs(toMin(ev.end) - toMin(ev.start));
@@ -196,9 +247,10 @@ function SketchCircle({
 
           return (
             <g key={ev.id}>
-              <motion.path d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
+              <motion.path ref={el => { if (el) pathRefs.current.set(ev.id, el as unknown as SVGPathElement); }}
+                d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
                 initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: isDraggingThis ? 0.9 : 1 }}
+                animate={{ scale: 1, opacity: isDraggingThis ? 0.92 : 1 }}
                 transition={isDraggingThis
                   ? { type: "spring", stiffness: 120, damping: 14 }
                   : { delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
@@ -219,10 +271,12 @@ function SketchCircle({
               </>}
               {/* Label */}
               <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.35" />
-              {/* Subtle bg pill behind title for readability */}
-              <rect x={lx - 4} y={ly - 18} width={Math.max(ev.title.length * 7.5, 60)} height="14" rx="3" fill="var(--sketch-bg)" opacity="0.85" transform={`translate(${-Math.max(ev.title.length * 7.5, 60) / 2 + 4}, 0)`} />
-              <text x={lx} y={ly - 8} textAnchor="middle" className="sketch-label" fontSize="12" fill="var(--sketch-fg)" fontWeight="800" style={{ letterSpacing: '0.03em' }}>{ev.title}</text>
-              <text x={lx} y={ly + 8} textAnchor="middle" className="sketch-label" fontSize="10" fill="var(--sketch-fg)" fontWeight="500" opacity="0.7">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
+              {/* Background pill for title readability */}
+              <rect x={lx - 4} y={ly - 22} width={Math.max(ev.title.length * 8.5, 60)} height="18" rx="4" fill="var(--sketch-bg)" opacity="0.9" transform={`translate(${-Math.max(ev.title.length * 8.5, 60) / 2 + 4}, 0)`} />
+              {/* Title — handwritten Caveat */}
+              <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="16" fill="var(--sketch-fg)" fontWeight="700" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
+              {/* Time — also handwritten, slightly smaller */}
+              <text x={lx} y={ly + 10} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="12.5" fill="var(--sketch-fg)" fontWeight="600" opacity="0.85">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
               <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" />
             </g>
           );
