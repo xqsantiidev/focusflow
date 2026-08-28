@@ -258,6 +258,7 @@ export default function Dashboard() {
   const [heatMap, setHeatMap] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => { setEvents(loadEvents(date)); setSelected(null); }, [date]);
   useEffect(() => { saveEvents(date, events); }, [events, date]);
@@ -329,7 +330,7 @@ export default function Dashboard() {
           </motion.button>
           <div className="flex items-center gap-3">
             <motion.button whileHover={{ scale: 1.08, rotate: 5 }} whileTap={{ scale: 0.9 }}
-              onClick={() => setHeatMap(!heatMap)} className={`sketch-btn-icon size-8 ${heatMap ? "bg-[#e55b5b]/10 border-[#e55b5b]" : ""}`} title="Heat map">
+              onClick={() => { setHeatMap(!heatMap); setShowStats(true); }} className={`sketch-btn-icon size-8 ${heatMap ? "bg-[#e55b5b]/10 border-[#e55b5b]" : ""}`} title="Stats & heat map">
               <svg viewBox="0 0 16 16" className="size-3.5"><rect x="1" y="10" width="3" height="5" rx="0.5" fill="currentColor" opacity=".3" /><rect x="5" y="7" width="3" height="8" rx="0.5" fill="currentColor" opacity=".6" /><rect x="9" y="4" width="3" height="11" rx="0.5" fill="currentColor" opacity=".8" /><rect x="13" y="1" width="3" height="14" rx="0.5" fill="currentColor" /></svg>
             </motion.button>
             <motion.button whileHover={{ scale: 1.08, rotate: 180 }} whileTap={{ scale: 0.9 }}
@@ -513,11 +514,160 @@ export default function Dashboard() {
 
       </div>
 
+      {/* Stats overlay */}
+      <AnimatePresence>
+        {showStats && <StatsView onClose={() => setShowStats(false)} palette={palette} currentDate={date} />}
+      </AnimatePresence>
+
       {/* Composer */}
       <AnimatePresence>
         {editing && <Composer event={editing} onClose={() => setEditing(null)} onSave={save} palette={palette} />}
       </AnimatePresence>
     </main>
+  );
+}
+
+/* ── Stats / Heatmap View ──────────────────────────────────── */
+function StatsView({ onClose, palette, currentDate }: { onClose: () => void; palette: Palette; currentDate: Date }) {
+  /* Load events for the full week */
+  const weekEvents: Event[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
+    weekEvents.push(...loadEvents(d));
+  }
+
+  /* Busiest hours (0-23) */
+  const hourly = Array.from({ length: 24 }, (_, h) => {
+    return weekEvents.filter(e => {
+      const s = toMin(e.start); const en = toMin(e.end);
+      return h * 60 >= s && h * 60 < en;
+    }).length;
+  });
+  const maxHourly = Math.max(...hourly, 1);
+
+  /* Busiest days (Mon-Sun) */
+  const daily = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
+    return { day: dayNames[i], events: loadEvents(d).length, date: d.getDate(), month: d.toLocaleDateString("en-US", { month: "short" }) };
+  });
+  const maxDaily = Math.max(...daily.map(d => d.events), 1);
+
+  /* Category breakdown */
+  const catCounts: Record<string, number> = {};
+  weekEvents.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + dur(e); });
+  const totalMin = Object.values(catCounts).reduce((a, b) => a + b, 0) || 1;
+  const catList = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+
+  /* Total stats */
+  const totalBlocks = weekEvents.length;
+  const totalHours = Math.floor(totalMin / 60);
+  const avgPerDay = (totalBlocks / 7).toFixed(1);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]">
+      <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-6">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="sketch-title text-2xl">weekly stats</h2>
+          <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+            onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></motion.button>
+        </div>
+
+        {/* Summary cards */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {[
+            { label: "total blocks", value: totalBlocks },
+            { label: "total hours", value: totalHours },
+            { label: "avg / day", value: avgPerDay },
+          ].map((s, i) => (
+            <motion.div key={s.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+              className="rounded-xl border border-[var(--sketch-border)] p-3 text-center">
+              <p className="sketch-title text-2xl">{s.value}</p>
+              <p className="sketch-label text-[9px] mt-1">{s.label}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Daily bar chart */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="mb-6">
+          <p className="sketch-label text-xs mb-3">busiest days</p>
+          <div className="flex items-end gap-2 h-28">
+            {daily.map((d, i) => {
+              const h = maxDaily > 0 ? (d.events / maxDaily) * 100 : 0;
+              const isToday = d.date === currentDate.getDate();
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <motion.div initial={{ height: 0 }} animate={{ height: `${h}%` }}
+                    transition={{ delay: 0.3 + i * 0.05, type: "spring", stiffness: 200, damping: 18 }}
+                    className={`w-full rounded-t-md min-h-[2px] ${isToday ? "bg-[#e55b5b]" : "bg-[var(--sketch-fg)] opacity-25"}`} />
+                  <span className="sketch-label text-[8px]">{d.day}</span>
+                  <span className="sketch-label text-[8px] opacity-50">{d.date}</span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+        {/* Hourly heatmap */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="mb-6">
+          <p className="sketch-label text-xs mb-3">hourly activity</p>
+          <div className="grid grid-cols-12 gap-1">
+            {hourly.map((count, h) => {
+              const intensity = maxHourly > 0 ? count / maxHourly : 0;
+              const bg = intensity === 0 ? "var(--sketch-border)" : `rgba(229, 91, 91, ${0.15 + intensity * 0.85})`;
+              return (
+                <motion.div key={h} initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ delay: 0.35 + h * 0.02, type: "spring", stiffness: 300, damping: 15 }}
+                  className="aspect-square rounded-md relative group cursor-default"
+                  style={{ backgroundColor: bg }}>
+                  <span className="sketch-label text-[7px] absolute -bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    {h === 0 ? "12a" : h < 12 ? `${h}a` : h === 12 ? "12p" : `${h - 12}p`}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between mt-5">
+            <span className="sketch-label text-[8px]">12am</span>
+            <span className="sketch-label text-[8px]">6am</span>
+            <span className="sketch-label text-[8px]">12pm</span>
+            <span className="sketch-label text-[8px]">6pm</span>
+            <span className="sketch-label text-[8px]">12am</span>
+          </div>
+        </motion.div>
+
+        {/* Category breakdown */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <p className="sketch-label text-xs mb-3">time by category</p>
+          <div className="space-y-2">
+            {catList.map(([cat, mins], i) => {
+              const pct = (mins / totalMin) * 100;
+              const color = palette[cat] || fallbackColor;
+              return (
+                <motion.div key={cat} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.45 + i * 0.05 }} className="flex items-center gap-3">
+                  <span className="sketch-dot" style={{ backgroundColor: color }} />
+                  <span className="sketch-label text-[10px] w-20 flex-shrink-0">{cat}</span>
+                  <div className="flex-1 h-2 rounded-full bg-[var(--sketch-border)] overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                      transition={{ delay: 0.5 + i * 0.05, type: "spring", stiffness: 100, damping: 18 }}
+                      className="h-full rounded-full" style={{ backgroundColor: color }} />
+                  </div>
+                  <span className="sketch-label text-[9px] w-12 text-right">{Math.floor(mins / 60)}h {mins % 60}m</span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+      </motion.div>
+    </motion.div>
   );
 }
 
