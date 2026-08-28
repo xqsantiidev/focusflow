@@ -97,6 +97,7 @@ export function useGoogleCalendar(currentDate: Date) {
   const [syncEnabled, setSyncEnabled] = useState(loadSyncPref);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasClientId, setHasClientId] = useState(() => !!getGoogleClientId());
   const tokenRef = useRef<TokenData | null>(null);
 
   // Check connection on mount
@@ -106,6 +107,7 @@ export function useGoogleCalendar(currentDate: Date) {
       tokenRef.current = tokens;
       setIsConnected(true);
     }
+    setHasClientId(!!getGoogleClientId());
   }, []);
 
   // Save sync preference
@@ -114,6 +116,11 @@ export function useGoogleCalendar(currentDate: Date) {
   /* ── Google Sign-In (using GIS popup) ── */
   const signIn = useCallback(() => {
     setError(null);
+    const clientId = getGoogleClientId();
+    if (!clientId) {
+      setError("Google Client ID not configured. Go to Keys/API keys tab and add your GOOGLE_CLIENT_ID.");
+      return;
+    }
     // @ts-expect-error — Google Identity Services loaded from script tag
     const client = window.google?.accounts?.oauth2;
     if (!client) {
@@ -122,7 +129,7 @@ export function useGoogleCalendar(currentDate: Date) {
     }
 
     const tokenClient = client.initTokenClient({
-      client_id: getGoogleClientId(),
+      client_id: clientId,
       scope: SCOPE,
       callback: (tokenResponse: { access_token: string; expires_in: number; refresh_token?: string }) => {
         if (tokenResponse.access_token) {
@@ -285,6 +292,7 @@ export function useGoogleCalendar(currentDate: Date) {
     setSyncEnabled,
     lastSyncTime,
     error,
+    hasClientId,
     signIn,
     signOut,
     pullEvents,
@@ -302,10 +310,15 @@ function formatMins(mins: number): string {
 }
 
 function getGoogleClientId(): string {
-  // Read from meta tag or environment
+  // 1. Check meta tag (set by user)
   const meta = document.querySelector('meta[name="google-signin-client_id"]');
   const fromMeta = meta?.getAttribute("content");
   if (fromMeta && fromMeta.length > 10) return fromMeta;
-  // Fallback — will be set by user in settings
-  return localStorage.getItem("thyme_google_client_id") || "";
+  // 2. Check localStorage (user can paste it in settings)
+  const fromStorage = localStorage.getItem("thyme_google_client_id");
+  if (fromStorage && fromStorage.length > 10) return fromStorage;
+  // 3. Check env var (set in Keys/API keys tab)
+  const fromEnv = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
+  if (fromEnv && fromEnv.length > 10) return fromEnv;
+  return "";
 }

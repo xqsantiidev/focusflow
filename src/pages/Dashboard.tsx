@@ -405,7 +405,6 @@ export default function Dashboard() {
   const addCategory = (name: string) => { if (name.trim() && !palette[name.trim()]) { setPalette(p => ({ ...p, [name.trim()]: fallbackColor })); } };
   const removeCategory = (cat: string) => { if (builtInPalette[cat]) return; setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
   const [newCatName, setNewCatName] = useState("");
-
   return (
     <main className="sketchbook">
       <div className="mx-auto flex min-h-screen max-w-[620px] flex-col px-5 pb-10 pt-6 sm:px-8">
@@ -470,7 +469,9 @@ export default function Dashboard() {
                   <p className="sketch-label text-xs mb-3 flex items-center gap-1.5">
                     <Calendar className="size-3" /> google calendar
                   </p>
-                  {!gCal.isConnected ? (
+                  {!gCal.hasClientId ? (
+                    <GoogleClientIdInput />
+                  ) : !gCal.isConnected ? (
                     <div>
                       <p className="sketch-body text-[11px] mb-3 opacity-60">connect your google calendar to sync events in and out of thyme.</p>
                       <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -688,6 +689,46 @@ export default function Dashboard() {
         {editing && <Composer event={editing} onClose={() => setEditing(null)} onSave={save} palette={palette} />}
       </AnimatePresence>
     </main>
+  );
+}
+
+/* ── Google Client ID Setup ───────────────────────────────── */
+function GoogleClientIdInput() {
+  const [clientId, setClientId] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    if (clientId.trim().length > 10) {
+      localStorage.setItem("thyme_google_client_id", clientId.trim());
+      setSaved(true);
+      setTimeout(() => window.location.reload(), 600);
+    }
+  };
+
+  return (
+    <div>
+      <p className="sketch-body text-[11px] mb-2 opacity-60">paste your google oauth client id to enable calendar sync.</p>
+      <div className="rounded-lg border border-[var(--sketch-border)] bg-[var(--sketch-hover)] p-3 mb-3">
+        <p className="sketch-label text-[10px] font-medium mb-1">how to get it:</p>
+        <ol className="sketch-body text-[10px] opacity-60 space-y-1 list-decimal pl-3">
+          <li>go to <span className="font-medium">console.cloud.google.com</span></li>
+          <li>create project → enable <span className="font-medium">Google Calendar API</span></li>
+          <li>credentials → create <span className="font-medium">OAuth 2.0 Client ID</span> (Web app)</li>
+          <li>add your app URL to authorized JavaScript origins</li>
+        </ol>
+      </div>
+      {saved ? (
+        <p className="sketch-label text-[11px] text-[#4caf50]">saved! reloading...</p>
+      ) : (
+        <div className="flex gap-2">
+          <Input value={clientId} onChange={e => setClientId(e.target.value)}
+            placeholder="xxxx.apps.googleusercontent.com"
+            className="sketch-input flex-1 text-[11px]" />
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={handleSave} className="sketch-btn text-[11px]">save</motion.button>
+        </div>
+      )}
+    </div>
   );
 }
 
