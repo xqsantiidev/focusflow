@@ -278,8 +278,6 @@ function SketchCircle({
               </>}
               {/* Label */}
               <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.35" />
-              {/* Background pill for title readability */}
-              <rect x={lx - 4} y={ly - 26} width={Math.max(ev.title.length * 8.5, 70)} height="36" rx="4" fill="var(--sketch-bg)" opacity="0.92" transform={`translate(${-Math.max(ev.title.length * 8.5, 70) / 2 + 4}, 0)`} />
               {/* Title — Monday Feelings, smaller */}
               <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'Monday Feelings', 'Caveat', cursive" fontSize="12" fill="var(--sketch-fg)" fontWeight="400" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
               {/* Time — Caveat (Monday Feelings lacks digits, so we use Caveat which renders numbers well) */}
