@@ -222,6 +222,24 @@ function SketchCircle({
           const size = 3 + (count / maxHeat) * 5;
           return <circle key={`heat-${i}`} cx={cx} cy={cy} r={size} fill="#e55b5b" opacity={opacity} />;
         })}
+
+        {/* Now indicator — small pulsing dot on the ring at current time */}
+        {(() => {
+          const now = new Date();
+          const nowMins = now.getHours() * 60 + now.getMinutes();
+          const a = timeToAngle(nowMins);
+          const [nx, ny] = pt(outerR + 14, a);
+          const [nx2, ny2] = pt(outerR + 30, a);
+          return (
+            <g>
+              <line x1={nx} y1={ny} x2={nx2} y2={ny2} stroke="#e55b5b" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+              <circle cx={nx} cy={ny} r="4" fill="#e55b5b">
+                <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.8;0.4;0.8" dur="2s" repeatCount="indefinite" />
+              </circle>
+            </g>
+          );
+        })()}
       </svg>
     </div>
   );
@@ -524,57 +542,79 @@ function Composer({ event, onClose, onSave, palette }: { event: Event; onClose: 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]">
-      <motion.form initial={{ scale: 0.95, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 12 }}
+      <motion.form initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: "spring", stiffness: 320, damping: 24 }}
         onSubmit={submit} className="composer">
-        <div className="flex items-center justify-between mb-5">
+        <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+          className="flex items-center justify-between mb-5">
           <h2 className="sketch-title text-2xl">{event.id ? "edit block" : "new block"}</h2>
-          <button type="button" onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></button>
-        </div>
+          <motion.button type="button" whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+            onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></motion.button>
+        </motion.div>
 
-        <label className="sketch-label text-xs">title</label>
-        <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Chemistry lecture" className="sketch-input mt-1.5" required />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+          <label className="sketch-label text-xs">title</label>
+          <Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Chemistry lecture" className="sketch-input mt-1.5" required />
+        </motion.div>
 
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
+          className="grid grid-cols-2 gap-3 mt-4">
           <div><label className="sketch-label text-xs">start</label><Input type="time" value={start} onChange={e => setStart(e.target.value)} className="sketch-input mt-1.5" /></div>
           <div><label className="sketch-label text-xs">end</label><Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="sketch-input mt-1.5" /></div>
-        </div>
+        </motion.div>
 
-        <label className="sketch-label text-xs mt-4 block">category</label>
-        <div className="grid grid-cols-3 gap-2 mt-1.5">
-          {Object.keys(palette).map(cat => (
-            <button type="button" key={cat} onClick={() => { setCategory(cat); if (!useCustomColor) setColor(palette[cat]); }}
-              className={`sketch-chip ${category === cat ? "sketch-chip-active" : ""}`}>
-              <span className="sketch-dot" style={{ backgroundColor: palette[cat] }} />{cat}
-            </button>
-          ))}
-        </div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <label className="sketch-label text-xs mt-4 block">category</label>
+          <div className="grid grid-cols-3 gap-2 mt-1.5">
+            {Object.keys(palette).map((cat, i) => (
+              <motion.button type="button" key={cat} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.22 + i * 0.03, type: "spring", stiffness: 300, damping: 18 }}
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => { setCategory(cat); if (!useCustomColor) setColor(palette[cat]); }}
+                className={`sketch-chip ${category === cat ? "sketch-chip-active" : ""}`}>
+                <span className="sketch-dot" style={{ backgroundColor: palette[cat] }} />{cat}
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
 
         {/* Custom color */}
-        <label className="sketch-label text-xs mt-4 block">color</label>
-        <div className="flex items-center gap-3 mt-1.5">
-          <input type="color" value={color} onChange={e => { setColor(e.target.value); setUseCustomColor(true); }}
-            className="size-7 cursor-pointer rounded border-0 bg-transparent" />
-          <button type="button" onClick={() => { setUseCustomColor(false); setColor(palette[category]); }}
-            className="sketch-label text-[10px] opacity-50 hover:opacity-100">reset to category default</button>
-        </div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
+          <label className="sketch-label text-xs mt-4 block">color</label>
+          <div className="flex items-center gap-3 mt-1.5">
+            <motion.input whileHover={{ scale: 1.15 }} type="color" value={color} onChange={e => { setColor(e.target.value); setUseCustomColor(true); }}
+              className="size-7 cursor-pointer rounded border-0 bg-transparent" />
+            <button type="button" onClick={() => { setUseCustomColor(false); setColor(palette[category]); }}
+              className="sketch-label text-[10px] opacity-50 hover:opacity-100">reset to category default</button>
+          </div>
+        </motion.div>
 
         {/* Repeat */}
-        <label className="sketch-label text-xs mt-4 block flex items-center gap-1.5">
-          <Repeat className="size-3" /> repeat on
-        </label>
-        <div className="flex gap-1.5 mt-1.5">
-          {[0, 1, 2, 3, 4, 5, 6].map(d => (
-            <button type="button" key={d} onClick={() => toggleRepeat(d)}
-              className={`size-8 rounded-lg border text-[10px] font-medium transition ${repeat.includes(d) ? "bg-[var(--sketch-fg)] text-[var(--sketch-bg)] border-[var(--sketch-fg)]" : "border-[var(--sketch-border)] text-[var(--sketch-muted)] hover:border-[var(--sketch-fg)]"}`}>
-              {dayNames[d]}
-            </button>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+          <label className="sketch-label text-xs mt-4 block flex items-center gap-1.5">
+            <Repeat className="size-3" /> repeat on
+          </label>
+          <div className="flex gap-1.5 mt-1.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((d, i) => (
+              <motion.button type="button" key={d} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.34 + i * 0.03, type: "spring", stiffness: 400, damping: 15 }}
+                whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.9 }}
+                onClick={() => toggleRepeat(d)}
+                className={`size-8 rounded-lg border text-[10px] font-medium transition ${repeat.includes(d) ? "bg-[var(--sketch-fg)] text-[var(--sketch-bg)] border-[var(--sketch-fg)]" : "border-[var(--sketch-border)] text-[var(--sketch-muted)] hover:border-[var(--sketch-fg)]"}`}>
+                {dayNames[d]}
+            </motion.button>
           ))}
         </div>
+        </motion.div>
 
-        <label className="sketch-label text-xs mt-4 block">note</label>
-        <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="optional" className="sketch-input sketch-textarea mt-1.5" />
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}>
+          <label className="sketch-label text-xs mt-4 block">note</label>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="optional" className="sketch-input sketch-textarea mt-1.5" />
+        </motion.div>
 
-        <button type="submit" className="sketch-btn-primary mt-5 w-full">{event.id ? "save changes" : "add to my day"}</button>
+        <motion.button type="submit" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}
+          whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}
+          className="sketch-btn-primary mt-5 w-full">{event.id ? "save changes" : "add to my day"}</motion.button>
       </motion.form>
     </motion.div>
   );
