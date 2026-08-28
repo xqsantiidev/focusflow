@@ -1,7 +1,7 @@
 /* DO NOT CHANGE */
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap');
 @custom-variant dark (&:is(.dark *));
 
 /* DO NOT CHANGE */
@@ -120,9 +120,11 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
   button, input, textarea { font-family: inherit; }
   .font-mono { font-family: 'DM Mono', monospace; }
+  h1, h2 { letter-spacing: -0.06em; }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
