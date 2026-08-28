@@ -155,20 +155,20 @@ function SketchCircle({
         </defs>
 
         {/* Outer dotted guide */}
-        <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="1.5" strokeDasharray="3 8" opacity="0.3" />
+        <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="2" strokeDasharray="4 6" opacity="0.5" />
 
         {/* Hour ticks */}
         {Array.from({ length: 24 }, (_, h) => {
-          const a = timeToAngle(h * 60); const main = h % 3 === 0; const len = main ? 16 : 8;
+          const a = timeToAngle(h * 60); const main = h % 3 === 0; const len = main ? 18 : 10;
           const [x1, y1] = pt(outerR + 18, a); const [x2, y2] = pt(outerR + 18 + len, a);
-          return <line key={h} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sketch-line)" strokeWidth={main ? 1.8 : 1} strokeLinecap="round" opacity={main ? 0.6 : 0.25} />;
+          return <line key={h} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sketch-line)" strokeWidth={main ? 2.2 : 1.2} strokeLinecap="round" opacity={main ? 0.8 : 0.4} />;
         })}
 
         {/* Hour labels */}
         {[6, 9, 12, 15, 18, 21].map(h => {
-          const a = timeToAngle(h * 60); const [lx, ly] = pt(outerR + 40, a);
+          const a = timeToAngle(h * 60); const [lx, ly] = pt(outerR + 44, a);
           const h12 = h % 12 || 12; const ap = h >= 12 ? "pm" : "am";
-          return <text key={h} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" className="sketch-label" fontSize="11" fill="var(--sketch-muted)">{h12}{ap}</text>;
+          return <text key={h} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" className="sketch-label" fontSize="12" fill="var(--sketch-fg)" opacity="0.5" fontWeight="500">{h12}{ap}</text>;
         })}
 
         {/* Wedge segments */}
@@ -180,31 +180,41 @@ function SketchCircle({
           const d = `M ${ix1} ${iy1} L ${ox1} ${oy1} A ${outerR} ${outerR} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`;
           const color = getColor(ev, palette);
           const fill = ev.category === "Commute" ? "url(#pat-stripe)" : ev.category === "Free" ? "url(#pat-dots)" : color;
-          const midA = (s + e2) / 2; const midR = outerR + 50;
+          const midA = (s + e2) / 2;
+          /* Push labels further out and spread them slightly to reduce overlap */
+          const spread = dur(ev) < 30 ? 1.15 : dur(ev) < 60 ? 1.08 : 1.0;
+          const midR = (outerR + 56) * spread;
           const [lx, ly] = pt(midR, midA);
           const [ax, ay] = pt(outerR + 14, midA);
           const isSel = selected === ev.id;
+          const isDraggingThis = dragging?.eventId === ev.id;
 
           return (
             <g key={ev.id}>
               <motion.path d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
-                initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
-                whileHover={{ scale: 1.02 }}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: isDraggingThis ? 0.88 : 1 }}
+                transition={isDraggingThis ? { duration: 0.08 } : { delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
+                whileHover={{ scale: isSel ? 1 : 1.01 }}
                 className="cursor-pointer" onClick={e => { e.stopPropagation(); onSelect(ev.id); }}
                 style={{ transformOrigin: `${C}px ${C}px` }} />
               {/* Resize handles */}
               {isSel && <>
-                <circle cx={ox1} cy={oy1} r="7" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5"
-                  className="cursor-grab" onPointerDown={e => handlePointerDown(e, ev.id, "start")} />
-                <circle cx={ox2} cy={oy2} r="7" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5"
-                  className="cursor-grab" onPointerDown={e => handlePointerDown(e, ev.id, "end")} />
+                {/* Animated pulse ring on active drag handle */}
+                {isDraggingThis && <circle cx={dragging?.edge === "start" ? ox1 : ox2} cy={dragging?.edge === "start" ? oy1 : oy2} r="14" fill="none" stroke={color} strokeWidth="1.5" opacity="0.4">
+                  <animate attributeName="r" values="11;16;11" dur="1s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.4;0.15;0.4" dur="1s" repeatCount="indefinite" />
+                </circle>}
+                <circle cx={ox1} cy={oy1} r="8" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5"
+                  className="cursor-grab active:cursor-grabbing" onPointerDown={e => handlePointerDown(e, ev.id, "start")} />
+                <circle cx={ox2} cy={oy2} r="8" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5"
+                  className="cursor-grab active:cursor-grabbing" onPointerDown={e => handlePointerDown(e, ev.id, "end")} />
               </>}
               {/* Label */}
-              <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-muted)" strokeWidth="1" strokeDasharray="3 3" opacity="0.4" />
-              <text x={lx} y={ly - 8} textAnchor="middle" className="sketch-label" fontSize="12" fill="var(--sketch-fg)" fontWeight="600">{ev.title}</text>
-              <text x={lx} y={ly + 8} textAnchor="middle" className="sketch-label" fontSize="9.5" fill="var(--sketch-muted)">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
-              <circle cx={ax} cy={ay} r="5" fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="1.8" />
+              <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-muted)" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.5" />
+              <text x={lx} y={ly - 10} textAnchor="middle" className="sketch-label" fontSize="11" fill="var(--sketch-fg)" fontWeight="700" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
+              <text x={lx} y={ly + 6} textAnchor="middle" className="sketch-label" fontSize="9" fill="var(--sketch-muted)" fontWeight="400">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
+              <circle cx={ax} cy={ay} r="4.5" fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="1.8" />
             </g>
           );
         })}
