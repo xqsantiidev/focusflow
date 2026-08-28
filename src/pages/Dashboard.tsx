@@ -288,7 +288,8 @@ function SketchCircle({
         })}
 
         {/* Inner circle */}
-        <circle cx={C} cy={C} r={innerR} fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="2.5" filter="url(#sketch)" />
+        {/* Clean inner circle: no displacement filter, keeping the geometry perfectly round */}
+        <circle cx={C} cy={C} r={innerR} fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="2.5" />
 
         {/* Heat map ring (rendered on top) */}
         {heatMap && heatData.map((count, i) => {
