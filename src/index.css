@@ -1,7 +1,7 @@
 /* DO NOT CHANGE */
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
 @media (prefers-reduced-motion: no-preference) {
   * { scroll-behavior: smooth; }
@@ -50,71 +50,37 @@
 /* CHANGE VALUES FOR THEME */
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.145 0.01 260);
-  --foreground: oklch(0.97 0.01 90);
-  --card: oklch(0.19 0.01 260);
-  --card-foreground: oklch(0.97 0.01 90);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.78 0.14 300);
-  --primary-foreground: oklch(0.16 0.02 260);
-  --secondary: oklch(0.24 0.01 260);
-  --secondary-foreground: oklch(0.97 0.01 90);
-  --muted: oklch(0.24 0.01 260);
-  --muted-foreground: oklch(0.65 0.02 260);
-  --accent: oklch(0.25 0.02 300);
-  --accent-foreground: oklch(0.97 0.01 90);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #f4f1e8;
+  --foreground: #3a3830;
+  --card: #faf8f0;
+  --card-foreground: #3a3830;
+  --popover: #faf8f0;
+  --popover-foreground: #3a3830;
+  --primary: #3a3830;
+  --primary-foreground: #faf8f0;
+  --secondary: #e8e4d8;
+  --secondary-foreground: #3a3830;
+  --muted: #e8e4d8;
+  --muted-foreground: #8a8678;
+  --accent: #e8e4d8;
+  --accent-foreground: #3a3830;
+  --destructive: #e55b5b;
+  --border: #d0ccbf;
+  --input: #d0ccbf;
+  --ring: #8a8678;
+  --chart-1: #4caf50;
+  --chart-2: #ffc107;
+  --chart-3: #e91e63;
+  --chart-4: #9c27b0;
+  --chart-5: #2196f3;
+  --sidebar: #faf8f0;
+  --sidebar-foreground: #3a3830;
+  --sidebar-primary: #3a3830;
+  --sidebar-primary-foreground: #faf8f0;
+  --sidebar-accent: #e8e4d8;
+  --sidebar-accent-foreground: #3a3830;
+  --sidebar-border: #d0ccbf;
+  --sidebar-ring: #8a8678;
 }
 
 @layer base {
@@ -123,15 +89,236 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Caveat', cursive;
     -webkit-font-smoothing: antialiased;
   }
-  button, input, textarea { font-family: inherit; }
-  .font-mono { font-family: 'DM Mono', monospace; }
-  h1, h2 { letter-spacing: -0.06em; }
-  .pixel-type { font-family: 'IBM Plex Mono', monospace; }
+  button, input, textarea, select { font-family: 'DM Mono', monospace; }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
   }
+}
+
+/* ============================================================
+   SKETCHBOOK SYSTEM — Thyme circular planner
+   ============================================================ */
+
+/* Page background with dot grid */
+.sketchbook {
+  background-color: #f4f1e8;
+  background-image: radial-gradient(circle, #d0ccbf 0.7px, transparent 0.7px);
+  background-size: 20px 20px;
+  min-height: 100vh;
+}
+
+/* Typography */
+.sketch-title {
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #3a3830;
+  line-height: 1;
+}
+.sketch-label {
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #8a8678;
+  text-transform: lowercase;
+}
+.sketch-body {
+  font-family: 'Caveat', cursive;
+  font-weight: 400;
+  color: #5a574c;
+  line-height: 1.45;
+}
+.sketch-link {
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  color: #8a8678;
+  transition: color 0.15s;
+}
+.sketch-link:hover { color: #3a3830; }
+
+/* Cards */
+.sketch-card {
+  background: #faf8f0;
+  border: 2px solid #d0ccbf;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Buttons */
+.sketch-btn-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid #d0ccbf;
+  background: transparent;
+  color: #8a8678;
+  transition: all 0.15s;
+}
+.sketch-btn-icon:hover {
+  background: #e8e4d8;
+  color: #3a3830;
+}
+.sketch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #d0ccbf;
+  background: transparent;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5a574c;
+  transition: all 0.15s;
+}
+.sketch-btn:hover {
+  background: #e8e4d8;
+}
+.sketch-btn-danger {
+  border-color: #f3c4c4;
+  color: #e55b5b;
+}
+.sketch-btn-danger:hover {
+  background: #fdf0f0;
+}
+.sketch-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  border: 2px solid #3a3830;
+  background: #3a3830;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: #faf8f0;
+  transition: all 0.2s;
+}
+.sketch-btn-primary:hover {
+  background: #2a2820;
+  transform: translateY(-1px);
+}
+
+/* FAB */
+.sketch-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2.5px solid #3a3830;
+  background: #ffc107;
+  color: #3a3830;
+  display: grid;
+  place-items: center;
+  box-shadow: 3px 3px 0 #d0ccbf;
+  transition: all 0.2s;
+  z-index: 20;
+}
+.sketch-fab:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #d0ccbf;
+}
+
+/* Week pills */
+.sketch-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #8a8678;
+  transition: all 0.15s;
+}
+.sketch-pill:hover { background: #e8e4d8; }
+.sketch-pill-active {
+  background: #3a3830;
+  color: #faf8f0;
+  border-color: #3a3830;
+}
+
+/* Chips */
+.sketch-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #d0ccbf;
+  background: #faf8f0;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: #5a574c;
+  transition: all 0.15s;
+}
+.sketch-chip:hover { background: #f0ece0; }
+.sketch-chip-active {
+  border-color: #3a3830;
+  background: #e8e4d8;
+  color: #3a3830;
+  font-weight: 500;
+}
+
+/* Dots */
+.sketch-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Inputs */
+.sketch-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #d0ccbf;
+  background: #faf8f0;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: #3a3830;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.sketch-input:focus {
+  border-color: #8a8678;
+}
+.sketch-input::placeholder {
+  color: #b8b4a8;
+}
+.sketch-textarea {
+  resize: none;
+  line-height: 1.5;
+}
+
+/* Composer */
+.composer {
+  width: 100%;
+  max-width: 420px;
+  background: #faf8f0;
+  border: 2px solid #d0ccbf;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 6px 6px 0 #e8e4d8;
+}
+
+/* SVG label font */
+.sketch-label {
+  font-family: 'DM Mono', monospace;
 }

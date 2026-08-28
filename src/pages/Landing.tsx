@@ -1,4 +1,82 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Clock3, Sparkles, SunMedium } from "lucide-react";
 import { useNavigate } from "react-router";
-export default function Landing() { const navigate = useNavigate(); return <main className="min-h-screen overflow-hidden bg-[#f1f1ed] text-[#2c2b27]"><nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-7"><div className="flex items-center gap-3 text-xl font-semibold tracking-[-.05em]"><div className="grid size-8 place-items-center rounded-xl bg-[#2c2b27] text-[#f1f1ed]"><Sparkles className="size-4" /></div>thyme<span className="text-[#e78779]">.</span></div><button onClick={() => navigate("/auth")} className="text-sm text-black/50 transition hover:text-black">Sign in <ArrowRight className="ml-1 inline size-4" /></button></nav><section className="mx-auto grid max-w-6xl items-center gap-16 px-6 pb-28 pt-20 lg:grid-cols-[1fr_450px] lg:pt-28"><motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7 }}><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#7687c9]/20 bg-[#7687c9]/[.09] px-3 py-1.5 text-xs text-[#5869aa]"><span className="size-1.5 rounded-full bg-[#63b8a9]" /> A quieter way to plan your day</div><h1 className="text-6xl font-semibold leading-[.95] tracking-[-.09em] sm:text-7xl">Make time<br /><span className="text-black/25">for living.</span></h1><p className="mt-8 max-w-md text-lg leading-8 text-black/50">thyme is a personal daily planner that turns your whole day into one beautiful, easy-to-understand circle.</p><button onClick={() => navigate("/auth")} className="mt-10 inline-flex h-12 items-center gap-3 rounded-full bg-[#2c2b27] px-6 text-sm font-semibold text-[#f1f1ed] transition hover:-translate-y-0.5 hover:bg-black/75">Open thyme <ArrowRight className="size-4" /></button></motion.div><motion.div initial={{ opacity: 0, x: 25 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .15, duration: .7 }} className="rounded-[32px] border border-black/[.09] bg-white/60 p-5 shadow-xl shadow-black/5"><div className="flex items-center justify-between border-b border-black/[.08] pb-5"><div><p className="text-xs uppercase tracking-[.2em] text-[#7687c9]">Your day</p><p className="mt-1 text-lg font-medium">Wednesday, Oct 16</p></div><SunMedium className="size-5 text-black/35" /></div><div className="relative mx-auto my-6 aspect-square max-w-[320px]"><svg viewBox="0 0 340 340" className="h-full w-full"><circle cx="170" cy="170" r="120" fill="none" stroke="rgba(44,43,39,.08)" strokeWidth="27" /><path d="M 170 50 A 120 120 0 0 1 290 170" fill="none" stroke="#7687c9" strokeWidth="27" strokeLinecap="round" /><path d="M 290 170 A 120 120 0 0 1 170 290" fill="none" stroke="#63b8a9" strokeWidth="27" strokeLinecap="round" /><path d="M 170 290 A 120 120 0 0 1 87 83" fill="none" stroke="#e78779" strokeWidth="27" strokeLinecap="round" /><circle cx="170" cy="170" r="82" fill="#f7f7f3" stroke="rgba(44,43,39,.08)" /><text x="170" y="163" textAnchor="middle" fill="#2c2b27" fontSize="12" letterSpacing="3">WEDNESDAY</text><text x="170" y="207" textAnchor="middle" fill="#2c2b27" fontSize="48" fontWeight="600">16</text></svg></div><div className="flex items-center justify-between rounded-2xl bg-[#7687c9]/[.1] p-4"><div><p className="text-xs text-black/40">Planned with intention</p><p className="mt-1 text-xl font-semibold">5h 15m</p></div><div className="grid size-10 place-items-center rounded-full border-4 border-[#7687c9] border-r-black/10"><Check className="size-4 text-[#5869aa]" /></div></div></motion.div></section><section className="border-y border-black/[.08] bg-white/40"><div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-3"><div className="flex gap-4"><Clock3 className="mt-1 size-5 text-[#7687c9]" /><div><p className="font-medium">See the whole day</p><p className="mt-2 text-sm leading-6 text-black/40">One circular view, no clutter.</p></div></div><div className="flex gap-4"><Sparkles className="mt-1 size-5 text-[#63b8a9]" /><div><p className="font-medium">Plan with intention</p><p className="mt-2 text-sm leading-6 text-black/40">Balance focus, health, and life.</p></div></div><div className="flex gap-4"><SunMedium className="mt-1 size-5 text-[#e78779]" /><div><p className="font-medium">Leave room to breathe</p><p className="mt-2 text-sm leading-6 text-black/40">Your schedule should feel human.</p></div></div></div></section><section className="mx-auto max-w-6xl px-6 py-24 text-center"><p className="text-sm text-black/40">Start with one day.</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.06em]">Make it a good one.</h2><button onClick={() => navigate("/auth")} className="mt-8 inline-flex items-center gap-2 rounded-full border border-black/15 px-5 py-3 text-sm transition hover:border-[#7687c9] hover:text-[#5869aa]">Open thyme <ArrowRight className="size-4" /></button></section></main>; }
+import { Plus } from "lucide-react";
+
+export default function Landing() {
+  const navigate = useNavigate();
+  return (
+    <main className="sketchbook min-h-screen overflow-hidden">
+      <div className="mx-auto max-w-[620px] px-6 pb-24 pt-10">
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <span className="sketch-title text-2xl">thyme<span className="text-[#e55b5b]">.</span></span>
+          <button onClick={() => navigate("/auth")} className="sketch-link text-sm">
+            open thyme →
+          </button>
+        </header>
+
+        {/* Hero */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
+          <h1 className="sketch-title text-6xl sm:text-7xl mt-20 leading-[1.05]">
+            your day,<br />
+            <span className="text-[#8a8678]">drawn out.</span>
+          </h1>
+          <p className="sketch-body text-lg mt-6 max-w-sm leading-relaxed opacity-60">
+            thyme is a daily planner that turns your schedule into a hand-drawn circle — colorful, creative, and yours.
+          </p>
+          <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-8">
+            plan my day
+          </button>
+        </motion.div>
+
+        {/* Sketch circle preview */}
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, duration: 0.6 }} className="mt-16">
+          <svg viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto">
+            {/* Outer dotted guide */}
+            <circle cx="200" cy="200" r="175" fill="none" stroke="#b8b4a8" strokeWidth="1.5" strokeDasharray="3 8" opacity="0.5" />
+            {/* Segments */}
+            <path d="M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z" fill="#4caf50" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z" fill="#ffc107" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z" fill="#9c27b0" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z" fill="#e91e63" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z" fill="#ffc107" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z" fill="#2196f3" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z" fill="#e91e63" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z" fill="#ffc107" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
+            {/* Inner circle */}
+            <circle cx="200" cy="200" r="70" fill="#faf8f0" stroke="#1a1a18" strokeWidth="2.5" />
+            <text x="200" y="195" textAnchor="middle" className="sketch-title" fontSize="28" fill="#3a3830">5/28</text>
+            <text x="200" y="218" textAnchor="middle" className="sketch-title" fontSize="14" fill="#8a8678">Thursday</text>
+          </svg>
+        </motion.div>
+
+        {/* Features */}
+        <div className="mt-16 space-y-6">
+          {[
+            { title: "see your whole day", desc: "one colorful circle, every block in place.", color: "#4caf50" },
+            { title: "tap to add", desc: "open space on the ring? just tap it.", color: "#ffc107" },
+            { title: "your sketchbook", desc: "colors, patterns, and a planner that feels like yours.", color: "#e91e63" },
+          ].map(f => (
+            <motion.div key={f.title} initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className="sketch-card">
+              <span className="sketch-dot" style={{ backgroundColor: f.color }} />
+              <h3 className="sketch-title text-lg mt-3">{f.title}</h3>
+              <p className="sketch-body text-sm mt-1 opacity-55">{f.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-20 text-center">
+          <p className="sketch-label text-sm opacity-40">start with one day.</p>
+          <h2 className="sketch-title text-4xl mt-2">make it a good one.</h2>
+          <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-6">
+            open thyme
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}

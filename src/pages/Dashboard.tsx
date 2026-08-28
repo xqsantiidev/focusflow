@@ -1,35 +1,389 @@
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Check, Clock3, Dumbbell, Edit3, LogOut, Plus, Sparkles, BookOpen, Users, Trash2, X, Settings2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Dumbbell, BookOpen, Users, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
-type Category = "Focus" | "Health" | "Life" | "Study";
-type Event = { id: number; title: string; start: string; end: string; category: Category; note: string; done: boolean };
-const colors: Record<Category, string> = { Focus: "#f4c95d", Health: "#72cbb0", Life: "#ef8d80", Study: "#82a9de" };
-const icons = { Focus: Sparkles, Health: Dumbbell, Life: Users, Study: BookOpen };
-const seed: Event[] = [{ id: 1, title: "Morning reset", start: "07:30", end: "08:00", category: "Health", note: "Water, stretch, and get ready without rushing.", done: true }, { id: 2, title: "Deep work · Biology", start: "09:00", end: "10:30", category: "Study", note: "Chapter 6 notes and practice questions.", done: false }, { id: 3, title: "Lunch with Maya", start: "12:30", end: "13:15", category: "Life", note: "Meet outside the student union.", done: false }, { id: 4, title: "Gym session", start: "16:00", end: "17:00", category: "Health", note: "Lower body + cooldown.", done: false }, { id: 5, title: "Read 20 pages", start: "20:30", end: "21:00", category: "Focus", note: "A quiet close to the day.", done: false }];
-function minutes(time: string) { const [h, m] = time.split(":").map(Number); return h * 60 + m; }
-function formatTime(time: string) { const [h, m] = time.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`; }
-function duration(e: Event) { return minutes(e.end) - minutes(e.start); }
-function keyFor(date: Date) { return `thyme-${date.toISOString().slice(0, 10)}`; }
-function readEvents(date: Date): Event[] { try { return JSON.parse(localStorage.getItem(keyFor(date)) || "null") || (date.toDateString() === new Date(2024, 9, 16).toDateString() ? seed : []); } catch { return []; } }
-function PixelThyme() { return <div className="grid grid-cols-5 gap-[2px]" aria-label="thyme"><span className="col-span-1 row-span-1 size-[3px] bg-[#f4c95d]" /><span className="size-[3px] bg-[#72cbb0]" /><span className="size-[3px] bg-[#ef8d80]" /><span className="col-span-2 size-[3px] bg-[#82a9de]" /><span className="col-span-2 size-[3px] bg-[#f4c95d]" /><span className="size-[3px] bg-[#72cbb0]" /><span className="size-[3px] bg-[#ef8d80]" /><span className="size-[3px] bg-[#82a9de]" /><span className="size-[3px] bg-[#f4c95d]" /><span className="col-span-2 size-[3px] bg-[#72cbb0]" /><span className="size-[3px] bg-[#ef8d80]" /><span className="size-[3px] bg-[#82a9de]" /><span className="col-span-2 size-[3px] bg-[#f4c95d]" /></div>; }
+type Category = "Class" | "Study" | "Health" | "Life" | "Commute" | "Free";
+type Event = { id: number; title: string; start: string; end: string; category: Category; note: string };
 
-function DayWheel({ events, selected, onSelect, onEmpty }: { events: Event[]; selected: number | null; onSelect: (id: number) => void; onEmpty: (time: string) => void }) {
-  const size = 620, center = size / 2, outer = 226, inner = 155, cells = 144;
-  const point = (r: number, a: number) => [center + r * Math.cos(a), center + r * Math.sin(a)];
-  const angleFor = (time: number) => time / 1440 * Math.PI * 2 - Math.PI / 2;
-  const hit = (e: React.MouseEvent<SVGSVGElement>) => { const rect = e.currentTarget.getBoundingClientRect(); const x = (e.clientX - rect.left) * size / rect.width - center, y = (e.clientY - rect.top) * size / rect.height - center; const r = Math.hypot(x, y); if (r < inner || r > outer + 45) return; let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2; const time = Math.round(a / (Math.PI * 2) * 1440 / 15) * 15; const found = events.find(item => time >= minutes(item.start) && time < minutes(item.end)); if (found) onSelect(found.id); else onEmpty(`${String(Math.floor(time / 60) % 24).padStart(2, "0")}:${String(time % 60).padStart(2, "0")}`); };
-  return <div className="relative mx-auto aspect-square w-full max-w-[590px]"><svg viewBox={`0 0 ${size} ${size}`} onClick={hit} className="h-full w-full touch-manipulation"><circle cx={center} cy={center} r={outer} fill="none" stroke="#242522" strokeWidth="86" /><circle cx={center} cy={center} r={outer} fill="none" stroke="#44463f" strokeWidth="2" strokeDasharray="1 14" />{Array.from({ length: cells }).map((_, i) => { const a = angleFor(i * 10), t = i * 10, found = events.find(item => t >= minutes(item.start) && t < minutes(item.end)); const [x1, y1] = point(inner + 3, a), [x2, y2] = point(outer + 35, a); return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={found ? colors[found.category] : "#3e403a"} strokeWidth={found ? 7 : 2} opacity={found?.done ? .3 : found ? 1 : .8} />; })}{events.map(event => { const start = angleFor(minutes(event.start)), end = angleFor(minutes(event.end)); const [x1, y1] = point(outer, start), [x2, y2] = point(outer, end); return <motion.path key={event.id} d={`M ${x1} ${y1} A ${outer} ${outer} 0 ${end - start > Math.PI ? 1 : 0} 1 ${x2} ${y2}`} fill="none" stroke={colors[event.category]} strokeWidth={selected === event.id ? 96 : 86} strokeLinecap="butt" opacity={event.done ? .3 : 1} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: .65, ease: "easeOut" }} onClick={e => { e.stopPropagation(); onSelect(event.id); }} className="cursor-pointer" />; })}<circle cx={center} cy={center} r={inner} fill="#151614" stroke="#30322d" strokeWidth="2" /></svg><div className="pointer-events-none absolute inset-0 grid place-items-center"><PixelThyme /></div><div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 text-[9px] font-medium tracking-[.25em] text-white/35">12 AM</div><div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-[9px] font-medium tracking-[.25em] text-white/35">6 PM</div><div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 text-[9px] font-medium tracking-[.25em] text-white/35">12 PM</div><div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-[9px] font-medium tracking-[.25em] text-white/35">6 AM</div></div>;
+const palette: Record<Category, { fill: string; pattern: "solid" | "stripe" | "dots" }> = {
+  Class: { fill: "#4caf50", pattern: "solid" },
+  Study: { fill: "#ffc107", pattern: "solid" },
+  Health: { fill: "#e91e63", pattern: "solid" },
+  Life: { fill: "#9c27b0", pattern: "solid" },
+  Commute: { fill: "#2196f3", pattern: "stripe" },
+  Free: { fill: "#b0bec5", pattern: "dots" },
+};
+const categoryIcons: Record<Category, React.FC<{ className?: string }>> = { Class: BookOpen, Study: Sparkles, Health: Dumbbell, Life: Users, Commute: ChevronRight, Free: Sparkles };
+
+const defaultDay: Event[] = [
+  { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "" },
+  { id: 2, title: "Exercise", start: "08:30", end: "09:15", category: "Health", note: "" },
+  { id: 3, title: "Government", start: "10:00", end: "11:00", category: "Class", note: "" },
+  { id: 4, title: "Chemistry", start: "11:30", end: "12:30", category: "Class", note: "" },
+  { id: 5, title: "Communication Arts", start: "12:45", end: "13:45", category: "Class", note: "" },
+  { id: 6, title: "Transportation", start: "14:00", end: "14:30", category: "Commute", note: "" },
+  { id: 7, title: "Pre-Calculus Assignment", start: "15:00", end: "16:00", category: "Study", note: "" },
+  { id: 8, title: "Make Project Video", start: "16:15", end: "17:15", category: "Life", note: "" },
+  { id: 9, title: "Take-Home Quiz", start: "17:30", end: "18:30", category: "Study", note: "" },
+  { id: 10, title: "Free time", start: "19:00", end: "20:30", category: "Free", note: "" },
+  { id: 11, title: "Daredevil", start: "20:30", end: "21:15", category: "Free", note: "" },
+];
+
+function readEvents(date: Date): Event[] { try { return JSON.parse(localStorage.getItem(`thyme-${date.toISOString().slice(0, 10)}`) || "null") || (date.toDateString() === new Date(2024, 9, 16).toDateString() ? defaultDay : []); } catch { return []; } }
+function writeEvents(date: Date, events: Event[]) { localStorage.setItem(`thyme-${date.toISOString().slice(0, 10)}`, JSON.stringify(events)); }
+function toMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + m; }
+function fmtTime(t: string) { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`; }
+function dur(e: Event) { return toMin(e.end) - toMin(e.start); }
+
+/* Sketchbook circle — wedges radiate outward like the hand-drawn reference */
+function SketchCircle({
+  events, selected, onSelect, onEmpty,
+}: {
+  events: Event[];
+  selected: number | null;
+  onSelect: (id: number) => void;
+  onEmpty: (time: string) => void;
+}) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const S = 620, C = S / 2, innerR = 120, outerR = 238;
+
+  const timeToAngle = (mins: number) => (mins / 1440) * Math.PI * 2 - Math.PI / 2;
+  const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * S / rect.width - C;
+    const y = (e.clientY - rect.top) * S / rect.height - C;
+    const r = Math.hypot(x, y);
+    if (r < innerR - 10 || r > outerR + 40) return;
+    let a = Math.atan2(y, x) + Math.PI / 2;
+    if (a < 0) a += Math.PI * 2;
+    const mins = Math.round((a / (Math.PI * 2)) * 1440 / 15) * 15;
+    const found = events.find(ev => mins >= toMin(ev.start) && mins < toMin(ev.end));
+    if (found) onSelect(found.id);
+    else onEmpty(`${String(Math.floor(mins / 60) % 24).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`);
+  };
+
+  /* Hour marks */
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  /* Wedge paths */
+  const wedges = events.map(ev => {
+    const s = timeToAngle(toMin(ev.start));
+    const e2 = timeToAngle(toMin(ev.end));
+    const [ix1, iy1] = pt(innerR, s);
+    const [ox1, oy1] = pt(outerR, s);
+    const [ix2, iy2] = pt(innerR, e2);
+    const [ox2, oy2] = pt(outerR, e2);
+    const large = e2 - s > Math.PI ? 1 : 0;
+    return {
+      ev,
+      d: `M ${ix1} ${iy1} L ${ox1} ${oy1} A ${outerR} ${outerR} 0 ${large} 1 ${ox2} ${oy2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`,
+      midAngle: (s + e2) / 2,
+      midR: outerR + 48,
+    };
+  });
+
+  /* Pattern defs */
+  const patternId = (cat: Category, type: string) => `pat-${cat}-${type}`;
+
+  return (
+    <svg ref={svgRef} viewBox={`0 0 ${S} ${S}`} onClick={handleClick} className="w-full touch-manipulation">
+      <defs>
+        {/* Stripe pattern */}
+        <pattern id={patternId("Commute", "stripe")} patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill={palette.Commute.fill} />
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#1a1a18" strokeWidth="2.5" />
+        </pattern>
+        {/* Dot pattern */}
+        <pattern id={patternId("Free", "dots")} patternUnits="userSpaceOnUse" width="10" height="10">
+          <rect width="10" height="10" fill={palette.Free.fill} />
+          <circle cx="5" cy="5" r="2" fill="#1a1a18" />
+        </pattern>
+        {/* Paper texture filter */}
+        <filter id="paper">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise" />
+          <feColorMatrix type="saturate" values="0" in="noise" result="gray" />
+          <feBlend in="SourceGraphic" in2="gray" mode="multiply" />
+        </filter>
+        <filter id="sketch">
+          <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="3" result="warp" />
+          <feDisplacementMap in="SourceGraphic" in2="warp" scale="1.5" />
+        </filter>
+      </defs>
+
+      {/* Outer dotted guide circle */}
+      <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="#b8b4a8" strokeWidth="1.5" strokeDasharray="3 8" opacity="0.5" />
+
+      {/* Hour tick marks */}
+      {hours.map(h => {
+        const a = timeToAngle(h * 60);
+        const isMain = h % 3 === 0;
+        const len = isMain ? 16 : 8;
+        const [x1, y1] = pt(outerR + 18, a);
+        const [x2, y2] = pt(outerR + 18 + len, a);
+        return (
+          <line key={h} x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke="#8a8678" strokeWidth={isMain ? 1.8 : 1}
+            strokeLinecap="round" opacity={isMain ? 0.7 : 0.35} />
+        );
+      })}
+
+      {/* Hour labels */}
+      {[6, 9, 12, 15, 18, 21].map(h => {
+        const a = timeToAngle(h * 60);
+        const [lx, ly] = pt(outerR + 40, a);
+        const ampm = h >= 12 ? "pm" : "am";
+        const h12 = h % 12 || 12;
+        return (
+          <text key={h} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+            className="sketch-label" fontSize="11" fill="#6b6758">
+            {h12}{ampm}
+          </text>
+        );
+      })}
+
+      {/* Wedge segments */}
+      {wedges.map(({ ev, d, midAngle, midR }, i) => {
+        const cat = palette[ev.category];
+        const fillId = cat.pattern === "stripe" ? `url(#${patternId("Commute", "stripe")})`
+          : cat.pattern === "dots" ? `url(#${patternId("Free", "dots")})`
+          : cat.fill;
+        const [lx, ly] = pt(midR, midAngle);
+        const [ax, ay] = pt(outerR + 14, midAngle);
+        return (
+          <g key={ev.id}>
+            <motion.path
+              d={d} fill={fillId} stroke="#1a1a18" strokeWidth="2.5"
+              strokeLinejoin="round"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: i * 0.04, duration: 0.35 }}
+              className="cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); onSelect(ev.id); }}
+              style={{ transformOrigin: `${C}px ${C}px` }}
+            />
+            {/* Label arrow line */}
+            <line x1={ax} y1={ay} x2={lx} y2={ly}
+              stroke="#6b6758" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+            {/* Label text */}
+            <text x={lx} y={ly - 8} textAnchor="middle"
+              className="sketch-label" fontSize="12" fill="#3a3830" fontWeight="600">
+              {ev.title}
+            </text>
+            {/* Time label */}
+            <text x={lx} y={ly + 8} textAnchor="middle"
+              className="sketch-label" fontSize="9.5" fill="#8a8678">
+              {fmtTime(ev.start)} — {fmtTime(ev.end)}
+            </text>
+            {/* Small circles at start/end times like the sketch */}
+            <circle cx={ax} cy={ay} r="5" fill="#faf8f0" stroke="#1a1a18" strokeWidth="1.8" />
+          </g>
+        );
+      })}
+
+      {/* Inner circle */}
+      <circle cx={C} cy={C} r={innerR} fill="#faf8f0" stroke="#1a1a18" strokeWidth="2.5" filter="url(#sketch)" />
+    </svg>
+  );
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth(); const navigate = useNavigate(); const [date, setDate] = useState(new Date(2024, 9, 16)); const [events, setEvents] = useState<Event[]>(() => readEvents(new Date(2024, 9, 16))); const [selected, setSelected] = useState<number | null>(null); const [editing, setEditing] = useState<Event | null>(null);
-  useEffect(() => { setEvents(readEvents(date)); setSelected(null); }, [date]); useEffect(() => { localStorage.setItem(keyFor(date), JSON.stringify(events)); }, [events, date]); const active = events.find(e => e.id === selected) || null; const label = date.toLocaleDateString("en-US", { weekday: "long" }); const month = date.toLocaleDateString("en-US", { month: "long" }); const moveDay = (amount: number) => setDate(current => new Date(current.getFullYear(), current.getMonth(), current.getDate() + amount));
-  const save = (e: Event) => { setEvents(list => (list.some(x => x.id === e.id) ? list.map(x => x.id === e.id ? e : x) : [...list, e]).sort((a, b) => a.start.localeCompare(b.start))); setSelected(e.id); setEditing(null); }; const remove = (id: number) => { setEvents(list => list.filter(e => e.id !== id)); setSelected(null); setEditing(null); }; const toggle = (id: number) => setEvents(list => list.map(e => e.id === id ? { ...e, done: !e.done } : e));
-  return <main className="min-h-screen bg-[#111210] text-[#f0f0e9]"><div className="mx-auto flex min-h-screen max-w-[620px] flex-col px-5 pb-8 pt-6 sm:px-8"><header className="flex items-center justify-between"><button onClick={() => setDate(new Date(2024, 9, 16))} className="flex items-center gap-3 text-lg font-semibold tracking-[-.05em]"><PixelThyme /><span>thyme<span className="text-[#f4c95d]">.</span></span></button><div className="flex items-center gap-5"><button onClick={async () => { await signOut(); navigate("/"); }} aria-label="Sign out" className="text-white/35 hover:text-white"><LogOut className="size-4" /></button><button aria-label="Settings" className="text-white/35"><Settings2 className="size-5" /></button></div></header><div className="mt-10 flex items-end justify-between"><button onClick={() => moveDay(-1)} className="grid size-10 place-items-center rounded-full border border-white/10 text-white/40 hover:bg-white/10"><ChevronLeft className="size-5" /></button><div className="text-center"><p className="text-xs font-medium uppercase tracking-[.25em] text-white/35">{label}</p><h1 className="mt-2 text-4xl font-semibold tracking-[-.08em]">{date.getDate()} <span className="text-white/30">{month}</span></h1><p className="mt-2 text-xs text-white/25">{date.getFullYear()}</p></div><button onClick={() => moveDay(1)} className="grid size-10 place-items-center rounded-full border border-white/10 text-white/40 hover:bg-white/10"><ChevronRight className="size-5" /></button></div><div className="mt-8 flex justify-center gap-2">{[-2, -1, 0, 1, 2].map(offset => { const day = new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset); return <button key={offset} onClick={() => setDate(day)} className={`grid size-9 place-items-center rounded-full text-xs transition ${offset === 0 ? "bg-[#f4c95d] font-semibold text-[#191a16]" : "text-white/35 hover:bg-white/10"}`}>{day.getDate()}</button>; })}</div><div className="mt-8"><DayWheel events={events} selected={selected} onSelect={setSelected} onEmpty={time => setEditing({ id: 0, title: "", start: time, end: `${String(Math.floor((minutes(time) + 45) / 60) % 24).padStart(2, "0")}:${String((minutes(time) + 45) % 60).padStart(2, "0")}`, category: "Study", note: "", done: false })} /></div><p className="mt-1 text-center text-[10px] uppercase tracking-[.18em] text-white/25">tap an open part of the ring to make time</p><div className="mt-8 flex items-center justify-center gap-5 text-[9px] uppercase tracking-[.15em] text-white/35">{(Object.keys(colors) as Category[]).map(c => <span key={c} className="flex items-center gap-1.5"><i className="size-2" style={{ backgroundColor: colors[c] }} />{c}</span>)}</div>{active && <AnimatePresence><motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="mt-8 rounded-2xl border border-white/10 bg-[#1b1d19] p-5"><div className="flex items-start justify-between"><div><p className="text-[10px] uppercase tracking-[.2em]" style={{ color: colors[active.category] }}>{active.category}</p><h2 className={`mt-2 text-xl font-medium ${active.done ? "text-white/35 line-through" : ""}`}>{active.title}</h2><p className="mt-1 flex items-center gap-2 text-xs text-white/35"><Clock3 className="size-3" />{formatTime(active.start)} — {formatTime(active.end)} · {duration(active)} min</p></div><button onClick={() => setSelected(null)}><X className="size-4 text-white/30" /></button></div><div className="mt-5 flex gap-2"><button onClick={() => toggle(active.id)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-xs hover:bg-white/5">{active.done ? "Mark open" : "Check off in ring"}</button><button onClick={() => setEditing(active)} className="grid size-10 place-items-center rounded-xl border border-white/10"><Edit3 className="size-4" /></button><button onClick={() => remove(active.id)} className="grid size-10 place-items-center rounded-xl border border-white/10 text-[#ef8d80]"><Trash2 className="size-4" /></button></div></motion.div></AnimatePresence>}<button onClick={() => setEditing({ id: 0, title: "", start: "18:00", end: "18:45", category: "Study", note: "", done: false })} className="mx-auto mt-8 flex items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs text-white/50 transition hover:border-[#f4c95d] hover:text-[#f4c95d]"><Plus className="size-4" /> Add block</button></div>{editing && <Composer event={editing} onClose={() => setEditing(null)} onSave={save} />}</main>;
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const [date, setDate] = useState(new Date(2024, 9, 16));
+  const [events, setEvents] = useState<Event[]>(() => readEvents(new Date(2024, 9, 16)));
+  const [selected, setSelected] = useState<number | null>(null);
+  const [editing, setEditing] = useState<Event | null>(null);
+
+  useEffect(() => { setEvents(readEvents(date)); setSelected(null); }, [date]);
+  useEffect(() => { writeEvents(date, events); }, [events, date]);
+
+  const active = events.find(e => e.id === selected) || null;
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const moveDay = (n: number) => setDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));
+
+  const save = (ev: Event) => {
+    setEvents(list => {
+      const next = list.some(x => x.id === ev.id) ? list.map(x => x.id === ev.id ? ev : x) : [...list, ev];
+      return next.sort((a, b) => toMin(a.start) - toMin(b.start));
+    });
+    setSelected(ev.id);
+    setEditing(null);
+  };
+  const remove = (id: number) => { setEvents(list => list.filter(e => e.id !== id)); setSelected(null); };
+
+  return (
+    <main className="sketchbook">
+      <div className="mx-auto flex min-h-screen max-w-[620px] flex-col px-5 pb-10 pt-6 sm:px-8">
+
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <button onClick={() => setDate(new Date(2024, 9, 16))}
+            className="sketch-link flex items-center gap-2 text-xl font-bold">
+            thyme<span className="text-[#e55b5b]">.</span>
+          </button>
+          <button onClick={async () => { await signOut(); navigate("/"); }}
+            className="sketch-link flex items-center gap-1.5 text-xs">
+            <LogOut className="size-3.5" /> sign out
+          </button>
+        </header>
+
+        {/* Day navigation */}
+        <div className="mt-8 flex items-center justify-between">
+          <button onClick={() => moveDay(-1)}
+            className="sketch-btn-icon"><ChevronLeft className="size-5" /></button>
+          <div className="text-center">
+            <p className="sketch-label text-lg">{weekday}</p>
+            <h1 className="sketch-title text-5xl mt-1">{date.getDate()} <span className="text-[#8a8678]">{month}</span></h1>
+            <p className="sketch-label text-xs mt-1 opacity-50">{date.getFullYear()}</p>
+          </div>
+          <button onClick={() => moveDay(1)}
+            className="sketch-btn-icon"><ChevronRight className="size-5" /></button>
+        </div>
+
+        {/* Week dots */}
+        <div className="mt-5 flex justify-center gap-3">
+          {[-3, -2, -1, 0, 1, 2, 3].map(offset => {
+            const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset);
+            const isToday = offset === 0;
+            const initial = d.toLocaleDateString("en-US", { weekday: "narrow" });
+            return (
+              <button key={offset} onClick={() => setDate(d)}
+                className={`sketch-pill ${isToday ? "sketch-pill-active" : ""}`}>
+                <span className="text-[10px] uppercase">{initial}</span>
+                <span className="text-sm font-bold">{d.getDate()}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* The big sketch circle */}
+        <div className="mt-8">
+          <SketchCircle
+            events={events}
+            selected={selected}
+            onSelect={setSelected}
+            onEmpty={time => {
+              const endMins = (toMin(time) + 45) % 1440;
+              setEditing({
+                id: 0, title: "", start: time,
+                end: `${String(Math.floor(endMins / 60)).padStart(2, "0")}:${String(endMins % 60).padStart(2, "0")}`,
+                category: "Study", note: "",
+              });
+            }}
+          />
+        </div>
+
+        {/* Selected event detail — only shown below the circle when selected */}
+        <AnimatePresence>
+          {active && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
+              className="sketch-card mt-8">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="sketch-dot" style={{ backgroundColor: palette[active.category].fill }} />
+                    <span className="sketch-label text-xs uppercase">{active.category}</span>
+                  </div>
+                  <h3 className="sketch-title text-2xl">{active.title}</h3>
+                  <p className="sketch-label text-sm mt-1">
+                    {fmtTime(active.start)} — {fmtTime(active.end)} · {dur(active)} min
+                  </p>
+                </div>
+              </div>
+              {active.note && <p className="sketch-body text-sm mt-3 opacity-60">{active.note}</p>}
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => setEditing(active)} className="sketch-btn">
+                  <Edit3 className="size-3.5" /> edit
+                </button>
+                <button onClick={() => remove(active.id)} className="sketch-btn sketch-btn-danger">
+                  <Trash2 className="size-3.5" /> remove
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Add button */}
+        <button onClick={() => setEditing({
+          id: 0, title: "", start: "12:00", end: "12:45",
+          category: "Study", note: "",
+        })} className="sketch-fab">
+          <Plus className="size-5" />
+        </button>
+
+      </div>
+
+      {/* Composer modal */}
+      <AnimatePresence>
+        {editing && <Composer event={editing} onClose={() => setEditing(null)} onSave={save} />}
+      </AnimatePresence>
+    </main>
+  );
 }
-function Composer({ event, onClose, onSave }: { event: Event; onClose: () => void; onSave: (event: Event) => void }) { const [title, setTitle] = useState(event.title); const [start, setStart] = useState(event.start); const [end, setEnd] = useState(event.end); const [category, setCategory] = useState<Category>(event.category); const [note, setNote] = useState(event.note); const submit = (e: React.FormEvent) => { e.preventDefault(); if (!title.trim() || minutes(end) <= minutes(start)) return; onSave({ ...event, title: title.trim(), start, end, category, note }); }; return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-30 grid place-items-center bg-black/60 p-5 backdrop-blur-sm"><motion.form initial={{ scale: .96, y: 12 }} animate={{ scale: 1, y: 0 }} onSubmit={submit} className="w-full max-w-md rounded-3xl border border-white/10 bg-[#f4f4ee] p-6 text-[#30312e] shadow-2xl"><div className="mb-6 flex items-center justify-between"><div><p className="text-[10px] font-medium uppercase tracking-[.2em] text-[#7687c9]">{event.id ? "Edit block" : "New block"}</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.05em]">Make room.</h2></div><button type="button" onClick={onClose}><X className="size-5 text-black/35" /></button></div><label className="text-xs text-black/45">Title<Input autoFocus value={title} onChange={e => setTitle(e.target.value)} className="mt-2 h-12 border-black/10 bg-white text-black" required /></label><div className="mt-4 grid grid-cols-2 gap-3"><label className="text-xs text-black/45">Start<Input type="time" value={start} onChange={e => setStart(e.target.value)} className="mt-2 border-black/10 bg-white text-black" /></label><label className="text-xs text-black/45">End<Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="mt-2 border-black/10 bg-white text-black" /></label></div><label className="mt-4 block text-xs text-black/45">Category</label><div className="mt-2 grid grid-cols-2 gap-2">{(Object.keys(colors) as Category[]).map(item => <button type="button" key={item} onClick={() => setCategory(item)} className={`rounded-xl border p-3 text-left text-sm ${category === item ? "border-[#7687c9] bg-[#7687c9]/10" : "border-black/10 bg-white"}`}><span className="mr-2 inline-block size-2" style={{ backgroundColor: colors[item] }} />{item}</button>)}</div><label className="mt-4 block text-xs text-black/45">Note<textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className="mt-2 w-full resize-none rounded-xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-[#7687c9]" /></label><Button type="submit" className="mt-5 h-12 w-full rounded-xl bg-[#30312e] text-[#f1f1ed]">{event.id ? "Save changes" : "Add to my day"} <Check className="size-4" /></Button></motion.form></motion.div>; }
+
+function Composer({ event, onClose, onSave }: { event: Event; onClose: () => void; onSave: (ev: Event) => void }) {
+  const [title, setTitle] = useState(event.title);
+  const [start, setStart] = useState(event.start);
+  const [end, setEnd] = useState(event.end);
+  const [category, setCategory] = useState<Category>(event.category);
+  const [note, setNote] = useState(event.note);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || toMin(end) <= toMin(start)) return;
+    onSave({ ...event, title: title.trim(), start, end, category, note });
+  };
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]">
+      <motion.form initial={{ scale: 0.95, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 12 }}
+        onSubmit={submit} className="composer">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="sketch-title text-2xl">{event.id ? "edit block" : "new block"}</h2>
+          <button type="button" onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></button>
+        </div>
+
+        <label className="sketch-label text-xs">title</label>
+        <Input autoFocus value={title} onChange={e => setTitle(e.target.value)}
+          placeholder="Chemistry lecture" className="sketch-input mt-1.5" required />
+
+        <div className="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <label className="sketch-label text-xs">start</label>
+            <Input type="time" value={start} onChange={e => setStart(e.target.value)} className="sketch-input mt-1.5" />
+          </div>
+          <div>
+            <label className="sketch-label text-xs">end</label>
+            <Input type="time" value={end} onChange={e => setEnd(e.target.value)} className="sketch-input mt-1.5" />
+          </div>
+        </div>
+
+        <label className="sketch-label text-xs mt-4 block">category</label>
+        <div className="grid grid-cols-3 gap-2 mt-1.5">
+          {(Object.keys(palette) as Category[]).map(cat => (
+            <button type="button" key={cat} onClick={() => setCategory(cat)}
+              className={`sketch-chip ${category === cat ? "sketch-chip-active" : ""}`}>
+              <span className="sketch-dot" style={{ backgroundColor: palette[cat].fill }} />
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <label className="sketch-label text-xs mt-4 block">note</label>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
+          placeholder="optional"
+          className="sketch-input sketch-textarea mt-1.5" />
+
+        <button type="submit" className="sketch-btn-primary mt-5 w-full">
+          {event.id ? "save changes" : "add to my day"}
+        </button>
+      </motion.form>
+    </motion.div>
+  );
+}
