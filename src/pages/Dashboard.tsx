@@ -215,13 +215,13 @@ function SketchCircle({
         </defs>
 
         {/* Outer dotted guide */}
-        <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="2" strokeDasharray="4 6" opacity="0.5" />
+        <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="2" strokeDasharray="4 6" strokeLinecap="round" opacity="0.5" shapeRendering="geometricPrecision" />
 
         {/* Hour ticks */}
         {Array.from({ length: 24 }, (_, h) => {
           const a = timeToAngle(h * 60); const main = h % 3 === 0; const len = main ? 18 : 10;
           const [x1, y1] = pt(outerR + 18, a); const [x2, y2] = pt(outerR + 18 + len, a);
-          return <line key={h} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sketch-line)" strokeWidth={main ? 2.2 : 1.2} strokeLinecap="round" opacity={main ? 0.8 : 0.4} />;
+          return <line key={h} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--sketch-line)" strokeWidth={main ? 2.2 : 1.2} strokeLinecap="round" opacity={main ? 0.8 : 0.4} shapeRendering="geometricPrecision" />;
         })}
 
         {/* Hour labels */}
@@ -268,22 +268,22 @@ function SketchCircle({
               {/* Resize handles */}
               {isSel && <>
                 {/* Animated pulse ring on active drag handle */}
-                {isDraggingThis && <circle cx={dragging?.edge === "start" ? ox1 : ox2} cy={dragging?.edge === "start" ? oy1 : oy2} r="14" fill="none" stroke={color} strokeWidth="1.5" opacity="0.4">
+                {isDraggingThis && <circle cx={dragging?.edge === "start" ? ox1 : ox2} cy={dragging?.edge === "start" ? oy1 : oy2} r="14" fill="none" stroke={color} strokeWidth="1.5" opacity="0.4" shapeRendering="geometricPrecision">
                   <animate attributeName="r" values="11;16;11" dur="1s" repeatCount="indefinite" />
                   <animate attributeName="opacity" values="0.4;0.15;0.4" dur="1s" repeatCount="indefinite" />
                 </circle>}
-                <circle cx={ox1} cy={oy1} r="8" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5"
+                <circle cx={ox1} cy={oy1} r="8" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5" shapeRendering="geometricPrecision"
                   className="cursor-grab active:cursor-grabbing" onPointerDown={e => handlePointerDown(e, ev.id, "start")} />
-                <circle cx={ox2} cy={oy2} r="8" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5"
+                <circle cx={ox2} cy={oy2} r="8" fill="var(--sketch-bg)" stroke={color} strokeWidth="2.5" shapeRendering="geometricPrecision"
                   className="cursor-grab active:cursor-grabbing" onPointerDown={e => handlePointerDown(e, ev.id, "end")} />
               </>}
               {/* Label */}
-              <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.35" />
+              <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" strokeLinecap="round" opacity="0.35" shapeRendering="geometricPrecision" />
               {/* Title — SA Long Beach for soft, personal handwriting look */}
               <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="400" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
               {/* Time — SA Long Beach for consistent look */}
               <text x={lx} y={ly + 7} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="400" opacity="0.85">{fmtTime(ev.start)} - {fmtTime(ev.end)}</text>
-              <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" />
+              <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" shapeRendering="geometricPrecision" />
             </g>
           );
         })}
@@ -300,7 +300,7 @@ function SketchCircle({
           const [cx, cy] = pt(r, mid);
           const opacity = 0.2 + (count / maxHeat) * 0.6;
           const size = 3 + (count / maxHeat) * 5;
-          return <circle key={`heat-${i}`} cx={cx} cy={cy} r={size} fill="#e55b5b" opacity={opacity} />;
+          return <circle key={`heat-${i}`} cx={cx} cy={cy} r={size} fill="#e55b5b" opacity={opacity} shapeRendering="geometricPrecision" />;
         })}
 
         {/* Now indicator — pulsing red dot on the inner ring at current time */}
@@ -313,17 +313,17 @@ function SketchCircle({
           return (
             <g>
               {/* Glow ring behind the dot */}
-              <circle cx={nx} cy={ny} r="12" fill="none" stroke="#e55b5b" strokeWidth="1.5" opacity="0.3">
+              <circle cx={nx} cy={ny} r="12" fill="none" stroke="#e55b5b" strokeWidth="1.5" opacity="0.3" shapeRendering="geometricPrecision">
                 <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
               </circle>
               {/* Main dot — larger, more visible */}
-              <circle cx={nx} cy={ny} r="6" fill="#e55b5b">
+              <circle cx={nx} cy={ny} r="6" fill="#e55b5b" shapeRendering="geometricPrecision">
                 <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite" />
               </circle>
               {/* Inner highlight */}
-              <circle cx={nx} cy={ny} r="2.5" fill="#fff" opacity="0.7" />
+              <circle cx={nx} cy={ny} r="2.5" fill="#fff" opacity="0.7" shapeRendering="geometricPrecision" />
             </g>
           );
         })()}
