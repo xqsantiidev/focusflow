@@ -613,7 +613,15 @@ export default function Dashboard() {
 }
 
 /* ── Stats / Heatmap View ──────────────────────────────────── */
+const STATS_GRAPHS = ["busiest days", "hourly activity", "daily hours", "category ring"] as const;
+type StatsGraph = (typeof STATS_GRAPHS)[number];
+
 function StatsView({ onClose, palette, currentDate }: { onClose: () => void; palette: Palette; currentDate: Date }) {
+  const [graph, setGraph] = useState<StatsGraph>("busiest days");
+  const graphIdx = STATS_GRAPHS.indexOf(graph);
+  const prevGraph = () => setGraph(STATS_GRAPHS[(graphIdx - 1 + STATS_GRAPHS.length) % STATS_GRAPHS.length]);
+  const nextGraph = () => setGraph(STATS_GRAPHS[(graphIdx + 1) % STATS_GRAPHS.length]);
+
   /* Load events for the full week */
   const weekEvents: Event[] = [];
   for (let i = 0; i < 7; i++) {
@@ -621,12 +629,18 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
     weekEvents.push(...loadEvents(d));
   }
 
-  /* Busiest days (Mon-Sun) */
+  /* Daily data (Mon-Sun) */
   const daily = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
-    return { day: dayNames[i], events: loadEvents(d).length, date: d.getDate(), month: d.toLocaleDateString("en-US", { month: "short" }) };
+    const dayEvents = loadEvents(d);
+    return {
+      day: dayNames[i], date: d.getDate(),
+      events: dayEvents.length,
+      hours: dayEvents.reduce((sum, e) => sum + dur(e), 0) / 60,
+    };
   });
   const maxDaily = Math.max(...daily.map(d => d.events), 1);
+  const maxHours = Math.max(...daily.map(d => d.hours), 1);
 
   /* Hourly activity (0-23) */
   const hourly = Array.from({ length: 24 }, (_, h) => {
@@ -646,7 +660,12 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
   /* Total stats */
   const totalBlocks = weekEvents.length;
   const totalHours = Math.floor(totalMin / 60);
+  const totalHoursRemain = totalMin % 60;
   const avgPerDay = (totalBlocks / 7).toFixed(1);
+
+  /* Productivity score: % of waking hours (7am-11pm) that have blocks */
+  const wakingMins = 16 * 60;
+  const productivityPct = Math.round((totalMin / (wakingMins * 7)) * 100);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -666,85 +685,183 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { label: "total blocks", value: totalBlocks },
-            { label: "total hours", value: totalHours },
+            { label: "total hours", value: `${totalHours}h ${totalHoursRemain}m` },
             { label: "avg / day", value: avgPerDay },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
               className="rounded-xl border border-[var(--sketch-border)] p-3 text-center">
               <p className="sketch-title text-2xl">{s.value}</p>
-              <p className="sketch-label text-[9px] mt-1">{s.label}</p>
+              <p className="sketch-label text-[11px] mt-1 opacity-70">{s.label}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Daily bar chart */}
+        {/* Productivity bar */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          className="mb-6">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="sketch-label text-sm font-medium">productivity</p>
+            <span className="sketch-title text-lg">{productivityPct}%</span>
+          </div>
+          <div className="h-2.5 rounded-full bg-[var(--sketch-border)] overflow-hidden">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(productivityPct, 100)}%` }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 100, damping: 20 }}
+              className="h-full rounded-full bg-[#e55b5b]" />
+          </div>
+          <p className="sketch-label text-[10px] mt-1 opacity-50">{totalMin} min scheduled out of {wakingMins * 7} waking min / week</p>
+        </motion.div>
+
+        {/* Graph navigation */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="mb-6">
-          <p className="sketch-label text-xs mb-3">busiest days</p>
-          <div className="flex items-end gap-2 h-28">
-            {daily.map((d, i) => {
-              const h = maxDaily > 0 ? (d.events / maxDaily) * 100 : 0;
-              const isToday = d.date === currentDate.getDate();
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <motion.div initial={{ height: 0 }} animate={{ height: `${h}%` }}
-                    transition={{ delay: 0.3 + i * 0.05, type: "spring", stiffness: 200, damping: 18 }}
-                    className={`w-full rounded-t-md min-h-[2px] ${isToday ? "bg-[#e55b5b]" : "bg-[var(--sketch-fg)] opacity-25"}`} />
-                  <span className="sketch-label text-[8px]">{d.day}</span>
-                  <span className="sketch-label text-[8px] opacity-50">{d.date}</span>
-                </div>
-              );
-            })}
-          </div>
+          className="flex items-center justify-between mb-4">
+          <motion.button whileHover={{ scale: 1.1, x: -2 }} whileTap={{ scale: 0.9 }}
+            onClick={prevGraph} className="sketch-btn-icon size-8"><ChevronLeft className="size-4" /></motion.button>
+          <motion.p key={graph} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+            className="sketch-label text-sm font-medium tracking-wide uppercase">{graph}</motion.p>
+          <motion.button whileHover={{ scale: 1.1, x: 2 }} whileTap={{ scale: 0.9 }}
+            onClick={nextGraph} className="sketch-btn-icon size-8"><ChevronRight className="size-4" /></motion.button>
         </motion.div>
 
-        {/* Hourly heatmap */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-          className="mb-6">
-          <p className="sketch-label text-xs mb-3">hourly activity</p>
-          <div className="grid grid-cols-12 gap-1">
-            {hourly.map((count, h) => {
-              const intensity = maxHourly > 0 ? count / maxHourly : 0;
-              const bg = intensity === 0 ? "var(--sketch-border)" : `rgba(229, 91, 91, ${0.15 + intensity * 0.85})`;
-              return (
-                <motion.div key={h} initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  transition={{ delay: 0.35 + h * 0.02, type: "spring", stiffness: 300, damping: 15 }}
-                  className="aspect-square rounded-md relative group cursor-default"
-                  style={{ backgroundColor: bg }}>
-                  <span className="sketch-label text-[7px] absolute -bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    {h === 0 ? "12a" : h < 12 ? `${h}a` : h === 12 ? "12p" : `${h - 12}p`}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </div>
-          <div className="flex justify-between mt-5">
-            <span className="sketch-label text-[8px]">12am</span>
-            <span className="sketch-label text-[8px]">6am</span>
-            <span className="sketch-label text-[8px]">12pm</span>
-            <span className="sketch-label text-[8px]">6pm</span>
-            <span className="sketch-label text-[8px]">12am</span>
-          </div>
-        </motion.div>
+        {/* ── Graph: Busiest Days ── */}
+        {graph === "busiest days" && (
+          <motion.div key="busiest" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6">
+            <div className="flex items-end gap-2 h-32">
+              {daily.map((d, i) => {
+                const h = maxDaily > 0 ? (d.events / maxDaily) * 100 : 0;
+                const isToday = d.date === currentDate.getDate();
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="sketch-label text-[10px] font-medium opacity-70">{d.events}</span>
+                    <motion.div initial={{ height: 0 }} animate={{ height: `${h}%` }}
+                      transition={{ delay: 0.1 + i * 0.05, type: "spring", stiffness: 200, damping: 18 }}
+                      className={`w-full rounded-t-md min-h-[3px] ${isToday ? "bg-[#e55b5b]" : "bg-[var(--sketch-fg)] opacity-30"}`} />
+                    <span className="sketch-label text-[10px] font-medium">{d.day}</span>
+                    <span className="sketch-label text-[9px] opacity-50">{d.date}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
-        {/* Category breakdown */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <p className="sketch-label text-xs mb-3">time by category</p>
-          <div className="space-y-2">
+        {/* ── Graph: Hourly Activity ── */}
+        {graph === "hourly activity" && (
+          <motion.div key="hourly" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6">
+            <div className="grid grid-cols-12 gap-1.5">
+              {hourly.map((count, h) => {
+                const intensity = maxHourly > 0 ? count / maxHourly : 0;
+                const bg = intensity === 0 ? "var(--sketch-border)" : `rgba(229, 91, 91, ${0.15 + intensity * 0.85})`;
+                return (
+                  <div key={h} className="relative group">
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                      transition={{ delay: 0.05 + h * 0.02, type: "spring", stiffness: 300, damping: 15 }}
+                      className="aspect-square rounded-lg cursor-default"
+                      style={{ backgroundColor: bg }} />
+                    <span className="sketch-label text-[9px] absolute -bottom-5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-medium">
+                      {h === 0 ? "12a" : h < 12 ? `${h}a` : h === 12 ? "12p" : `${h - 12}p`}
+                      {count > 0 && <span className="block text-[8px] opacity-70">{count} block{count > 1 ? "s" : ""}</span>}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between mt-6">
+              {['12am', '6am', '12pm', '6pm', '12am'].map(t => (
+                <span key={t} className="sketch-label text-[10px] font-medium opacity-60">{t}</span>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Graph: Daily Hours ── */}
+        {graph === "daily hours" && (
+          <motion.div key="dailyhours" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6">
+            <div className="flex items-end gap-2 h-32">
+              {daily.map((d, i) => {
+                const pct = maxHours > 0 ? (d.hours / maxHours) * 100 : 0;
+                const isToday = d.date === currentDate.getDate();
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="sketch-label text-[10px] font-medium opacity-70">{d.hours.toFixed(1)}h</span>
+                    <motion.div initial={{ height: 0 }} animate={{ height: `${pct}%` }}
+                      transition={{ delay: 0.1 + i * 0.05, type: "spring", stiffness: 200, damping: 18 }}
+                      className="w-full rounded-t-md min-h-[3px]" style={{ backgroundColor: isToday ? '#e55b5b' : 'var(--sketch-fg)', opacity: isToday ? 1 : 0.3 }} />
+                    <span className="sketch-label text-[10px] font-medium">{d.day}</span>
+                    <span className="sketch-label text-[9px] opacity-50">{d.date}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="sketch-label text-[10px] text-center mt-3 opacity-50">total hours scheduled per day</p>
+          </motion.div>
+        )}
+
+        {/* ── Graph: Category Ring ── */}
+        {graph === "category ring" && (
+          <motion.div key="ring" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6 flex flex-col items-center">
+            <svg viewBox="0 0 200 200" className="w-44 h-44">
+              {(() => {
+                let cumAngle = -Math.PI / 2;
+                return catList.map(([cat, mins], i) => {
+                  const sliceAngle = (mins / totalMin) * Math.PI * 2;
+                  const r = 80, cx = 100, cy = 100;
+                  const x1 = cx + r * Math.cos(cumAngle);
+                  const y1 = cy + r * Math.sin(cumAngle);
+                  cumAngle += sliceAngle;
+                  const x2 = cx + r * Math.cos(cumAngle);
+                  const y2 = cy + r * Math.sin(cumAngle);
+                  const large = sliceAngle > Math.PI ? 1 : 0;
+                  const color = palette[cat] || fallbackColor;
+                  return (
+                    <motion.path key={cat}
+                      initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 + i * 0.08, type: "spring", stiffness: 200, damping: 18 }}
+                      d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
+                      fill={color} style={{ transformOrigin: `${cx}px ${cy}px` }} />
+                  );
+                });
+              })()}
+              <circle cx={100} cy={100} r={38} fill="var(--sketch-card)" shapeRendering="geometricPrecision" />
+              <text x={100} y={96} textAnchor="middle" className="sketch-title" fontSize="22" fill="var(--sketch-fg)">{Math.round(totalMin / 60)}h</text>
+              <text x={100} y={114} textAnchor="middle" className="sketch-label" fontSize="10" fill="var(--sketch-muted)" opacity="0.7">total</text>
+            </svg>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-3">
+              {catList.map(([cat, mins]) => {
+                const pct = Math.round((mins / totalMin) * 100);
+                return (
+                  <div key={cat} className="flex items-center gap-2">
+                    <span className="sketch-dot" style={{ backgroundColor: palette[cat] || fallbackColor }} />
+                    <span className="sketch-label text-[11px] font-medium capitalize">{cat}</span>
+                    <span className="sketch-label text-[10px] opacity-60 ml-auto">{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Category bars (always shown) ── */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <p className="sketch-label text-sm font-medium tracking-wide mb-3">time by category</p>
+          <div className="space-y-2.5">
             {catList.map(([cat, mins], i) => {
               const pct = (mins / totalMin) * 100;
               const color = palette[cat] || fallbackColor;
               return (
                 <motion.div key={cat} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.45 + i * 0.05 }} className="flex items-center gap-3">
+                  transition={{ delay: 0.35 + i * 0.05 }} className="flex items-center gap-3">
                   <span className="sketch-dot" style={{ backgroundColor: color }} />
-                  <span className="sketch-label text-[10px] w-20 flex-shrink-0">{cat}</span>
-                  <div className="flex-1 h-2 rounded-full bg-[var(--sketch-border)] overflow-hidden">
+                  <span className="sketch-label text-[12px] font-medium w-24 flex-shrink-0 capitalize">{cat}</span>
+                  <div className="flex-1 h-2.5 rounded-full bg-[var(--sketch-border)] overflow-hidden">
                     <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                      transition={{ delay: 0.5 + i * 0.05, type: "spring", stiffness: 100, damping: 18 }}
+                      transition={{ delay: 0.4 + i * 0.05, type: "spring", stiffness: 100, damping: 18 }}
                       className="h-full rounded-full" style={{ backgroundColor: color }} />
                   </div>
-                  <span className="sketch-label text-[9px] w-12 text-right">{Math.floor(mins / 60)}h {mins % 60}m</span>
+                  <span className="sketch-label text-[11px] w-14 text-right font-medium">{Math.floor(mins / 60)}h {mins % 60}m</span>
                 </motion.div>
               );
             })}
