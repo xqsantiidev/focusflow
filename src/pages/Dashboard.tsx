@@ -81,6 +81,16 @@ function SketchCircle({
   const timeToAngle = (mins: number) => (mins / 1440) * Math.PI * 2 - Math.PI / 2;
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => {
+    try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  });
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos => {
+      const next = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      setLocation(next); localStorage.setItem("thyme-location", JSON.stringify(next));
+    }, () => undefined, { timeout: 8000 });
+  }, []);
   const [dragTick, setDragTick] = useState(0);
   const justDraggedRef = useRef(false);
   const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
@@ -217,8 +227,18 @@ function SketchCircle({
           </pattern>
         </defs>
 
-        {/* Daylight band: sunrise 06:30, sunset 18:30 */}
-        <path d={buildPath(390, 1110)} fill="rgba(255, 193, 7, 0.08)" stroke="none" shapeRendering="geometricPrecision" />
+        {/* Location-aware daylight markers: sunrise/sunset are estimated from the saved latitude. */}
+        {(() => {
+          const latitude = location?.latitude ?? 40;
+          const seasonal = Math.sin(((new Date().getDate() - 80) / 365) * Math.PI * 2);
+          const daylight = 12 + Math.max(-2, Math.min(2, latitude / 45)) * seasonal * 2;
+          const sunrise = Math.round((12 - daylight / 2) * 60);
+          const sunset = Math.round((12 + daylight / 2) * 60);
+          return <>
+            <line x1={pt(outerR + 5, timeToAngle(sunrise))[0]} y1={pt(outerR + 5, timeToAngle(sunrise))[1]} x2={pt(outerR + 30, timeToAngle(sunrise))[0]} y2={pt(outerR + 30, timeToAngle(sunrise))[1]} stroke="#f2b84b" strokeWidth="4" strokeLinecap="round" opacity="0.55" />
+            <line x1={pt(outerR + 5, timeToAngle(sunset))[0]} y1={pt(outerR + 5, timeToAngle(sunset))[1]} x2={pt(outerR + 30, timeToAngle(sunset))[0]} y2={pt(outerR + 30, timeToAngle(sunset))[1]} stroke="#5d6680" strokeWidth="4" strokeLinecap="round" opacity="0.45" />
+          </>;
+        })()}
         {/* Outer dotted guide */}
         <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="2" strokeDasharray="4 6" strokeLinecap="round" opacity="0.5" shapeRendering="geometricPrecision" />
 
@@ -333,16 +353,23 @@ function SketchCircle({
           const nowMins = now.getHours() * 60 + now.getMinutes();
           const a = timeToAngle(nowMins);
           const nowR = innerR + 14;
+          const latitude = location?.latitude ?? 40;
+          const seasonal = Math.sin(((now.getDate() - 80) / 365) * Math.PI * 2);
+          const daylight = 12 + Math.max(-2, Math.min(2, latitude / 45)) * seasonal * 2;
+          const sunrise = (12 - daylight / 2) * 60;
+          const sunset = (12 + daylight / 2) * 60;
+          const isDaylight = nowMins >= sunrise && nowMins <= sunset;
+          const indicatorColor = isDaylight ? "#f2b84b" : "#7180b5";
           const [nx, ny] = pt(nowR, a);
           return (
             <g>
               {/* Glow ring behind the dot */}
-              <circle cx={nx} cy={ny} r="12" fill="none" stroke="#e55b5b" strokeWidth="1.5" opacity="0.3" shapeRendering="geometricPrecision">
+              <circle cx={nx} cy={ny} r="12" fill="none" stroke={indicatorColor} strokeWidth="1.5" opacity="0.3" shapeRendering="geometricPrecision">
                 <animate attributeName="r" values="10;16;10" dur="2s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite" />
               </circle>
               {/* Main dot — larger, more visible */}
-              <circle cx={nx} cy={ny} r="6" fill="#e55b5b" shapeRendering="geometricPrecision">
+              <circle cx={nx} cy={ny} r="6" fill={indicatorColor} shapeRendering="geometricPrecision">
                 <animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite" />
                 <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite" />
               </circle>
