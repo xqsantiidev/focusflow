@@ -9,6 +9,13 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'Milky Cream';
+  src: url('/fonts/milky-cream.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   * { scroll-behavior: smooth; }
