@@ -16,6 +16,13 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'SA Long Beach';
+  src: url('/fonts/sa-long-beach.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   * { scroll-behavior: smooth; }
