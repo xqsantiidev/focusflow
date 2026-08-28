@@ -78,6 +78,7 @@ function SketchCircle({
   const timeToAngle = (mins: number) => (mins / 1440) * Math.PI * 2 - Math.PI / 2;
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
+  const justDraggedRef = useRef(false);
 
   const getEventAt = (x: number, y: number) => {
     const r = Math.hypot(x, y);
@@ -94,7 +95,7 @@ function SketchCircle({
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    if (dragging) return;
+    if (dragging || justDraggedRef.current) { justDraggedRef.current = false; return; }
     const [x, y] = svgXY(e);
     const found = getEventAt(x, y);
     if (found) { onSelect(found.id); return; }
@@ -128,7 +129,9 @@ function SketchCircle({
       if (mins > startMin && mins - startMin >= 15) onDragEnd(ev.id, ev.start, minToStr(mins));
     }
   };
-  const handlePointerUp = () => setDragging(null);
+  const handlePointerUp = () => { if (dragging) justDraggedRef.current = true; setDragging(null); };
+  /* Reset the guard after the click handler has had a chance to run */
+  useEffect(() => { if (justDraggedRef.current) { const t = setTimeout(() => { justDraggedRef.current = false; }, 50); return () => clearTimeout(t); } });
 
   /* Heat map data: density per 15-min slot */
   const heatData = Array.from({ length: 96 }, (_, i) => {
@@ -181,8 +184,10 @@ function SketchCircle({
           const color = getColor(ev, palette);
           const fill = ev.category === "Commute" ? "url(#pat-stripe)" : ev.category === "Free" ? "url(#pat-dots)" : color;
           const midA = (s + e2) / 2;
-          /* Push labels further out and spread them slightly to reduce overlap */
-          const spread = dur(ev) < 30 ? 1.15 : dur(ev) < 60 ? 1.08 : 1.0;
+          /* Spread labels outward based on proximity to other labels */
+          const gap = Math.abs(toMin(ev.end) - toMin(ev.start));
+          const nearbyCount = events.filter(o => o.id !== ev.id && Math.abs(toMin(o.start) - toMin(ev.start)) < 90).length;
+          const spread = (gap < 30 ? 1.2 : gap < 60 ? 1.1 : 1.0) + nearbyCount * 0.06;
           const midR = (outerR + 56) * spread;
           const [lx, ly] = pt(midR, midA);
           const [ax, ay] = pt(outerR + 14, midA);
@@ -193,8 +198,10 @@ function SketchCircle({
             <g key={ev.id}>
               <motion.path d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
                 initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: isDraggingThis ? 0.88 : 1 }}
-                transition={isDraggingThis ? { duration: 0.08 } : { delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
+                animate={{ scale: 1, opacity: isDraggingThis ? 0.9 : 1 }}
+                transition={isDraggingThis
+                  ? { type: "spring", stiffness: 120, damping: 14 }
+                  : { delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
                 whileHover={{ scale: isSel ? 1 : 1.01 }}
                 className="cursor-pointer" onClick={e => { e.stopPropagation(); onSelect(ev.id); }}
                 style={{ transformOrigin: `${C}px ${C}px` }} />
@@ -211,10 +218,12 @@ function SketchCircle({
                   className="cursor-grab active:cursor-grabbing" onPointerDown={e => handlePointerDown(e, ev.id, "end")} />
               </>}
               {/* Label */}
-              <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-muted)" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.5" />
-              <text x={lx} y={ly - 10} textAnchor="middle" className="sketch-label" fontSize="11" fill="var(--sketch-fg)" fontWeight="700" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
-              <text x={lx} y={ly + 6} textAnchor="middle" className="sketch-label" fontSize="9" fill="var(--sketch-muted)" fontWeight="400">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
-              <circle cx={ax} cy={ay} r="4.5" fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="1.8" />
+              <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.35" />
+              {/* Subtle bg pill behind title for readability */}
+              <rect x={lx - 4} y={ly - 18} width={Math.max(ev.title.length * 7.5, 60)} height="14" rx="3" fill="var(--sketch-bg)" opacity="0.85" transform={`translate(${-Math.max(ev.title.length * 7.5, 60) / 2 + 4}, 0)`} />
+              <text x={lx} y={ly - 8} textAnchor="middle" className="sketch-label" fontSize="12" fill="var(--sketch-fg)" fontWeight="800" style={{ letterSpacing: '0.03em' }}>{ev.title}</text>
+              <text x={lx} y={ly + 8} textAnchor="middle" className="sketch-label" fontSize="10" fill="var(--sketch-fg)" fontWeight="500" opacity="0.7">{fmtTime(ev.start)} — {fmtTime(ev.end)}</text>
+              <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" />
             </g>
           );
         })}
