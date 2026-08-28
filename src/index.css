@@ -373,7 +373,7 @@
 }
 
 /* SVG label font override for SVG elements */
-sketch-label, .sketch-label {
+.sketch-label {
   font-family: 'DM Mono', monospace;
 }
 
