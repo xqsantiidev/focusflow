@@ -278,10 +278,10 @@ function SketchCircle({
               </>}
               {/* Label */}
               <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.35" />
-              {/* Title — Caveat renders all characters (digits, letters, punctuation) */}
-              <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="700" style={{ letterSpacing: '0.01em' }}>{ev.title}</text>
-              {/* Time — Caveat for consistent look, plain hyphen for clean rendering */}
-              <text x={lx} y={ly + 7} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="500" opacity="0.8">{fmtTime(ev.start)} - {fmtTime(ev.end)}</text>
+              {/* Title — Monday Feelings for the playful handwritten look */}
+              <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'Monday Feelings', 'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="400" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
+              {/* Time — Caveat (Monday Feelings lacks digits, so Caveat renders numbers cleanly) */}
+              <text x={lx} y={ly + 7} textAnchor="middle" fontFamily="'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="600" opacity="0.85">{fmtTime(ev.start)} - {fmtTime(ev.end)}</text>
               <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" />
             </g>
           );
