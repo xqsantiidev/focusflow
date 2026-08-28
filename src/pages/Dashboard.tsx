@@ -81,9 +81,16 @@ function SketchCircle({
   const [dragTick, setDragTick] = useState(0);
   const justDraggedRef = useRef(false);
   const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
-  /* Animated angles for smooth DOM updates during drag */
   const animAngles = useRef<Map<number, { start: number; end: number }>>(new Map());
   const animFrameRef = useRef<number>(0);
+  /* Stable ref callback per event id — avoids creating new function refs */
+  const pathRefCallbacks = useRef<Record<number, (el: SVGPathElement | null) => void>>({});
+  const getPathRef = (id: number) => {
+    if (!pathRefCallbacks.current[id]) {
+      pathRefCallbacks.current[id] = (el) => { if (el) pathRefs.current.set(id, el); };
+    }
+    return pathRefCallbacks.current[id];
+  };
 
   const getEventAt = (x: number, y: number) => {
     const r = Math.hypot(x, y);
@@ -149,8 +156,6 @@ function SketchCircle({
     }
     if (newStart !== startMin || newEnd !== endMin) {
       animAngles.current.set(ev.id, { start: newStart, end: newEnd });
-      const path = pathRefs.current.get(ev.id);
-      if (path) path.setAttribute("d", buildPath(newStart, newEnd));
       setDragTick(t => t + 1);
     }
   };
@@ -249,7 +254,7 @@ function SketchCircle({
 
           return (
             <g key={ev.id}>
-              <motion.path ref={el => { if (el) pathRefs.current.set(ev.id, el as unknown as SVGPathElement); }}
+              <motion.path ref={getPathRef(ev.id) as (el: any) => void}
                 d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
                 initial={{ scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: isDraggingThis ? 0.92 : 1 }}
