@@ -105,10 +105,33 @@
 
 /* Page background with dot grid */
 .sketchbook {
+  --sketch-bg: #faf8f0;
+  --sketch-fg: #3a3830;
+  --sketch-muted: #8a8678;
+  --sketch-line: #d0ccbf;
+  --sketch-border: #d0ccbf;
+  --sketch-card: #faf8f0;
+  --sketch-hover: #f0ece0;
+  --sketch-input-bg: #faf8f0;
   background-color: #f4f1e8;
   background-image: radial-gradient(circle, #d0ccbf 0.7px, transparent 0.7px);
   background-size: 20px 20px;
   min-height: 100vh;
+  color: #3a3830;
+  transition: background-color 0.3s, color 0.3s;
+}
+.dark .sketchbook {
+  --sketch-bg: #1a1c18;
+  --sketch-fg: #e8e5dc;
+  --sketch-muted: #8a8878;
+  --sketch-line: #3a3930;
+  --sketch-border: #3a3930;
+  --sketch-card: #22231e;
+  --sketch-hover: #2a2b25;
+  --sketch-input-bg: #2a2b25;
+  background-color: #131412;
+  background-image: radial-gradient(circle, #2a2b25 0.7px, transparent 0.7px);
+  color: #e8e5dc;
 }
 
 /* Typography */
@@ -116,34 +139,34 @@
   font-family: 'Caveat', cursive;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #3a3830;
+  color: var(--sketch-fg);
   line-height: 1;
 }
 .sketch-label {
   font-family: 'DM Mono', monospace;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: #8a8678;
+  color: var(--sketch-muted);
   text-transform: lowercase;
 }
 .sketch-body {
   font-family: 'Caveat', cursive;
   font-weight: 400;
-  color: #5a574c;
+  color: var(--sketch-muted);
   line-height: 1.45;
 }
 .sketch-link {
   font-family: 'DM Mono', monospace;
   font-weight: 500;
-  color: #8a8678;
+  color: var(--sketch-muted);
   transition: color 0.15s;
 }
-.sketch-link:hover { color: #3a3830; }
+.sketch-link:hover { color: var(--sketch-fg); }
 
 /* Cards */
 .sketch-card {
-  background: #faf8f0;
-  border: 2px solid #d0ccbf;
+  background: var(--sketch-card);
+  border: 2px solid var(--sketch-border);
   border-radius: 12px;
   padding: 16px;
 }
@@ -155,14 +178,14 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1.5px solid #d0ccbf;
+  border: 1.5px solid var(--sketch-border);
   background: transparent;
-  color: #8a8678;
+  color: var(--sketch-muted);
   transition: all 0.15s;
 }
 .sketch-btn-icon:hover {
-  background: #e8e4d8;
-  color: #3a3830;
+  background: var(--sketch-hover);
+  color: var(--sketch-fg);
 }
 .sketch-btn {
   display: inline-flex;
@@ -170,16 +193,16 @@
   gap: 6px;
   padding: 7px 14px;
   border-radius: 8px;
-  border: 1.5px solid #d0ccbf;
+  border: 1.5px solid var(--sketch-border);
   background: transparent;
   font-family: 'DM Mono', monospace;
   font-size: 12px;
   font-weight: 500;
-  color: #5a574c;
+  color: var(--sketch-fg);
   transition: all 0.15s;
 }
 .sketch-btn:hover {
-  background: #e8e4d8;
+  background: var(--sketch-hover);
 }
 .sketch-btn-danger {
   border-color: #f3c4c4;
@@ -188,6 +211,7 @@
 .sketch-btn-danger:hover {
   background: #fdf0f0;
 }
+.dark .sketch-btn-danger { border-color: #5a2a2a; }
 .sketch-btn-primary {
   display: inline-flex;
   align-items: center;
@@ -195,39 +219,35 @@
   gap: 6px;
   padding: 10px 22px;
   border-radius: 10px;
-  border: 2px solid #3a3830;
-  background: #3a3830;
+  border: 2px solid var(--sketch-fg);
+  background: var(--sketch-fg);
   font-family: 'DM Mono', monospace;
   font-size: 13px;
   font-weight: 500;
-  color: #faf8f0;
+  color: var(--sketch-bg);
   transition: all 0.2s;
 }
 .sketch-btn-primary:hover {
-  background: #2a2820;
+  opacity: 0.85;
   transform: translateY(-1px);
 }
 
 /* FAB */
 .sketch-fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 2.5px solid #3a3830;
+  border: 2.5px solid var(--sketch-fg);
   background: #ffc107;
-  color: #3a3830;
+  color: var(--sketch-fg);
   display: grid;
   place-items: center;
-  box-shadow: 3px 3px 0 #d0ccbf;
+  box-shadow: 2px 2px 0 var(--sketch-border);
   transition: all 0.2s;
-  z-index: 20;
 }
 .sketch-fab:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 #d0ccbf;
+  box-shadow: 3px 3px 0 var(--sketch-border);
 }
 
 /* Week pills */
@@ -242,14 +262,14 @@
   background: transparent;
   font-family: 'DM Mono', monospace;
   font-size: 10px;
-  color: #8a8678;
+  color: var(--sketch-muted);
   transition: all 0.15s;
 }
-.sketch-pill:hover { background: #e8e4d8; }
+.sketch-pill:hover { background: var(--sketch-hover); }
 .sketch-pill-active {
-  background: #3a3830;
-  color: #faf8f0;
-  border-color: #3a3830;
+  background: var(--sketch-fg);
+  color: var(--sketch-bg);
+  border-color: var(--sketch-fg);
 }
 
 /* Chips */
@@ -259,18 +279,18 @@
   gap: 5px;
   padding: 7px 10px;
   border-radius: 8px;
-  border: 1.5px solid #d0ccbf;
-  background: #faf8f0;
+  border: 1.5px solid var(--sketch-border);
+  background: var(--sketch-input-bg);
   font-family: 'DM Mono', monospace;
   font-size: 11px;
-  color: #5a574c;
+  color: var(--sketch-fg);
   transition: all 0.15s;
 }
-.sketch-chip:hover { background: #f0ece0; }
+.sketch-chip:hover { background: var(--sketch-hover); }
 .sketch-chip-active {
-  border-color: #3a3830;
-  background: #e8e4d8;
-  color: #3a3830;
+  border-color: var(--sketch-fg);
+  background: var(--sketch-hover);
+  color: var(--sketch-fg);
   font-weight: 500;
 }
 
@@ -288,19 +308,20 @@
   width: 100%;
   padding: 9px 12px;
   border-radius: 8px;
-  border: 1.5px solid #d0ccbf;
-  background: #faf8f0;
+  border: 1.5px solid var(--sketch-border);
+  background: var(--sketch-input-bg);
   font-family: 'DM Mono', monospace;
   font-size: 13px;
-  color: #3a3830;
+  color: var(--sketch-fg);
   outline: none;
   transition: border-color 0.15s;
 }
 .sketch-input:focus {
-  border-color: #8a8678;
+  border-color: var(--sketch-muted);
 }
 .sketch-input::placeholder {
-  color: #b8b4a8;
+  color: var(--sketch-muted);
+  opacity: 0.5;
 }
 .sketch-textarea {
   resize: none;
@@ -311,11 +332,11 @@
 .composer {
   width: 100%;
   max-width: 420px;
-  background: #faf8f0;
-  border: 2px solid #d0ccbf;
+  background: var(--sketch-card);
+  border: 2px solid var(--sketch-border);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 6px 6px 0 #e8e4d8;
+  box-shadow: 4px 4px 0 var(--sketch-border);
 }
 
 /* SVG label font */
