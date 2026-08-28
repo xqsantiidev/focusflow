@@ -112,7 +112,7 @@ function SketchCircle({
     const found = getEventAt(x, y);
     if (found) { onSelect(found.id); return; }
     const r = Math.hypot(x, y);
-    if (r < innerR - 10 || r > outerR + 40) return;
+    if (r < innerR - 10 || r > outerR + 90) return;
     let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2;
     const mins = round15(a / (Math.PI * 2) * 1440);
     onEmpty(minToStr(mins));
@@ -198,8 +198,8 @@ function SketchCircle({
   const maxHeat = Math.max(...heatData, 1);
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[620px]">
-      <svg ref={svgRef} viewBox={`0 0 ${S} ${S}`}
+    <div className="relative mx-auto aspect-square w-full max-w-[620px] overflow-visible">
+      <svg ref={svgRef} viewBox={`0 0 ${S} ${S}`} preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}
         onClick={handleClick} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}
         className="w-full touch-manipulation">
         <defs>
@@ -246,7 +246,7 @@ function SketchCircle({
           const gap = Math.abs(toMin(ev.end) - toMin(ev.start));
           const nearbyCount = events.filter(o => o.id !== ev.id && Math.abs(toMin(o.start) - toMin(ev.start)) < 90).length;
           const spread = (gap < 30 ? 1.2 : gap < 60 ? 1.1 : 1.0) + nearbyCount * 0.06;
-          const midR = (outerR + 56) * spread;
+          const midR = (outerR + 72) * spread;
           const [lx, ly] = pt(midR, midA);
           const [ax, ay] = pt(outerR + 14, midA);
           const isSel = selected === ev.id;
