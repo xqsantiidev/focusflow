@@ -1,7 +1,7 @@
 /* DO NOT CHANGE */
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Caveat:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Caveat:wght@400;500;600;700&display=swap');
 
 @media (prefers-reduced-motion: no-preference) {
   * { scroll-behavior: smooth; }
@@ -89,11 +89,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Space Grotesk', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  button, input, textarea, select { font-family: 'Inter', sans-serif; }
+  button, input, textarea, select { font-family: 'Space Grotesk', sans-serif; }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
     cursor: pointer;
@@ -137,7 +137,7 @@
 
 /* Typography */
 .sketch-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--sketch-fg);
@@ -158,13 +158,13 @@
   text-transform: lowercase;
 }
 .sketch-body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 400;
   color: var(--sketch-muted);
   line-height: 1.6;
 }
 .sketch-link {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 500;
   color: var(--sketch-muted);
   transition: color 0.2s;
@@ -237,10 +237,10 @@
   border-radius: 10px;
   border: 2px solid var(--sketch-fg);
   background: var(--sketch-fg);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--sketch-bg);
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
