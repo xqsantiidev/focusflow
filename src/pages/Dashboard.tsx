@@ -346,6 +346,7 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
   const gCal = useGoogleCalendar(date);
 
   useEffect(() => { setEvents(loadEvents(date)); setSelected(null); }, [date]);
@@ -381,14 +382,13 @@ export default function Dashboard() {
   };
   const remove = (id: number) => {
     const deleted = events.find(e => e.id === id);
+    if (!deleted) return;
+    setPendingDelete(deleted);
+  };
+  const confirmRemove = () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete.id;
     setEvents(list => list.filter(e => e.id !== id));
-    if (deleted) {
-      window.setTimeout(() => {
-        if (window.confirm(`Restore “${deleted.title}”?`)) {
-          setEvents(list => [...list, deleted].sort((a, b) => toMin(a.start) - toMin(b.start)));
-        }
-      }, 0);
-    }
     /* Clean up repeating storage */
     for (let i = 0; i < 7; i++) {
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay() + i);
@@ -396,6 +396,7 @@ export default function Dashboard() {
       try { const existing: Event[] = JSON.parse(localStorage.getItem(key) || "[]"); localStorage.setItem(key, JSON.stringify(existing.filter(e => e.id !== id))); } catch { /* */ }
     }
     setSelected(null);
+    setPendingDelete(null);
   };
   const handleDragEnd = (id: number, newStart: string, newEnd: string) => {
     setEvents(list => list.map(e => e.id === id ? { ...e, start: newStart, end: newEnd } : e).sort((a, b) => toMin(a.start) - toMin(b.start)));
@@ -689,6 +690,27 @@ export default function Dashboard() {
       {/* Stats overlay */}
       <AnimatePresence>
         {showStats && <StatsView onClose={() => setShowStats(false)} palette={palette} currentDate={date} />}
+      </AnimatePresence>
+
+      {/* Delete confirmation */}
+      <AnimatePresence>
+        {pendingDelete && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]"
+            onClick={e => { if (e.target === e.currentTarget) setPendingDelete(null); }}>
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 12 }}
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              role="dialog" aria-modal="true" aria-labelledby="delete-title"
+              className="composer w-full max-w-sm">
+              <h2 id="delete-title" className="sketch-title text-2xl">are you sure?</h2>
+              <p className="sketch-body mt-2 text-sm opacity-65">Delete “{pendingDelete.title}” from this day?</p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button onClick={() => setPendingDelete(null)} className="sketch-btn">cancel</button>
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={confirmRemove} className="sketch-btn sketch-btn-danger">delete</motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Composer */}
