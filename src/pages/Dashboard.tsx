@@ -30,19 +30,20 @@ function round15(m: number) { return Math.round(m / 15) * 15; }
 function minToStr(m: number) { const h = Math.floor(m / 60) % 24; const mm = m % 60; return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`; }
 
 /* ── Persistence ───────────────────────────────────────────── */
+function sanitizeEvents(events: Event[]): Event[] { return events.map(e => ({ ...e, repeat: e.repeat || [], color: e.color })); }
 function loadEvents(date: Date): Event[] {
   try {
     const raw = localStorage.getItem(keyFor(date));
-    if (raw) return JSON.parse(raw);
+    if (raw) return sanitizeEvents(JSON.parse(raw));
   } catch { /* ignore */ }
   if (date.toDateString() === new Date(2024, 9, 16).toDateString()) return defaultDay;
   /* Seed from repeating blocks on other days */
   const repeating: Event[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay() + i);
-    try { const r = localStorage.getItem(dowKey(d)); if (r) repeating.push(...JSON.parse(r)); } catch { /* */ }
+    try { const r = localStorage.getItem(dowKey(d)); if (r) repeating.push(...sanitizeEvents(JSON.parse(r))); } catch { /* */ }
   }
-  const dayRepeating = repeating.filter(e => e.repeat.includes(date.getDay()));
+  const dayRepeating = repeating.filter(e => (e.repeat || []).includes(date.getDay()));
   const seen = new Set<string>();
   return dayRepeating.filter(e => { const k = `${e.title}-${e.start}`; if (seen.has(k)) return false; seen.add(k); return true; });
 }
@@ -259,7 +260,7 @@ export default function Dashboard() {
       return next.sort((a, b) => toMin(a.start) - toMin(b.start));
     });
     /* If repeating, also save to dow storage */
-    if (ev.repeat.length > 0) {
+    if ((ev.repeat || []).length > 0) {
       ev.repeat.forEach(dow => {
         const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay() + dow);
         const key = dowKey(d);
@@ -395,12 +396,12 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="sketch-dot" style={{ backgroundColor: getColor(active, palette) }} />
                     <span className="sketch-label text-xs uppercase">{active.category}</span>
-                    {active.repeat.length > 0 && <Repeat className="size-3 opacity-40" />}
+                    {(active.repeat || []).length > 0 && <Repeat className="size-3 opacity-40" />}
                   </div>
                   <h3 className="sketch-title text-2xl">{active.title}</h3>
                   <p className="sketch-label text-sm mt-1">{fmtTime(active.start)} — {fmtTime(active.end)} · {dur(active)} min</p>
-                  {active.repeat.length > 0 && (
-                    <p className="sketch-label text-[10px] mt-1 opacity-50">repeats {active.repeat.map(d => dayNames[d]).join(", ")}</p>
+                  {(active.repeat || []).length > 0 && (
+                    <p className="sketch-label text-[10px] mt-1 opacity-50">repeats {(active.repeat || []).map(d => dayNames[d]).join(", ")}</p>
                   )}
                 </div>
               </div>
@@ -473,7 +474,7 @@ function Composer({ event, onClose, onSave, palette }: { event: Event; onClose: 
   const [end, setEnd] = useState(event.end);
   const [category, setCategory] = useState<Category>(event.category);
   const [note, setNote] = useState(event.note);
-  const [repeat, setRepeat] = useState<number[]>(event.repeat);
+  const [repeat, setRepeat] = useState<number[]>(event.repeat || []);
   const [color, setColor] = useState(event.color || palette[event.category]);
   const [useCustomColor, setUseCustomColor] = useState(!!event.color);
 
