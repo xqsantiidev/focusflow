@@ -1,51 +1,16 @@
-// TODO: REPLACE THIS LANDING PAGE WITH AN ELEGANT, THEMATIC, AND WELL-DESIGNED LANDING PAGE RELEVANT TO THE PROJECT
 import { motion } from "framer-motion";
-import { Loader } from "lucide-react";
-import logo from "@/assets/logo.svg";
+import { ArrowRight, Check, Sparkles, Clock3, SunMedium } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function Landing() {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col"
-    >
-
-      
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center">
-        <div className="max-w-5xl mx-auto relative px-4">
-        {/* TODO: landing page goes here; replace with the landing page */}
-        <div className="flex justify-center">
-          <img
-            src={logo}
-            alt="Lock Icon"
-            width={64}
-            height={64}
-            className="rounded-lg mb-8 mt-24"
-          />
-        </div>
-        <div className="flex items-center justify-center text-foreground">
-          <Loader className="h-8 w-8 animate-spin mr-4 shrink-0" />
-          <span className="text-base">
-            <a
-              href="https://freebuff.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline hover:text-primary/80 transition-colors font-medium"
-            >
-              freebuff.com
-            </a>
-            {" "}is generating your project...
-          </span>
-        </div>
-        <p className="text-center text-muted-foreground py-6 text-sm mt-2">
-          Check progress on your project page.
-        </p>
-        
-        </div>
-      </div>
-    </motion.div>
-  );
+  const navigate = useNavigate();
+  return <main className="min-h-screen overflow-hidden bg-[#101112] text-[#f5f2ed]">
+    <div className="pointer-events-none absolute -right-40 -top-40 size-[520px] rounded-full bg-[#b99cff]/10 blur-[120px]" />
+    <nav className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-7"><div className="flex items-center gap-3 text-lg font-semibold tracking-tight"><div className="grid size-8 place-items-center rounded-xl bg-[#b99cff] text-[#17121e]"><Sparkles className="size-4" /></div>tempo<span className="text-[#b99cff]">.</span></div><button onClick={() => navigate("/auth")} className="text-sm text-white/55 transition hover:text-white">Sign in <ArrowRight className="ml-1 inline size-4" /></button></nav>
+    <section className="relative mx-auto grid max-w-6xl items-center gap-16 px-6 pb-24 pt-20 lg:grid-cols-[1fr_430px] lg:pt-28"><motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7 }}><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-[#b99cff]/20 bg-[#b99cff]/[.08] px-3 py-1.5 text-xs text-[#c9b5ff]"><span className="size-1.5 rounded-full bg-[#8de7c1]" /> A calmer way to plan your day</div><h1 className="max-w-xl text-6xl font-semibold leading-[.98] tracking-[-.07em] sm:text-7xl">Your time,<br /><span className="text-white/35">in rhythm.</span></h1><p className="mt-8 max-w-md text-lg leading-8 text-white/45">A beautifully simple daily planner for college life. Make room for the work, the people, and the moments that matter.</p><button onClick={() => navigate("/auth")} className="mt-10 inline-flex h-12 items-center gap-3 rounded-full bg-[#b99cff] px-6 text-sm font-semibold text-[#17121e] transition hover:-translate-y-0.5 hover:bg-[#c9b5ff]">Plan my day <ArrowRight className="size-4" /></button></motion.div>
+      <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: .15, duration: .7 }} className="relative rounded-[28px] border border-white/[.1] bg-[#191a1c] p-5 shadow-2xl shadow-black/30"><div className="flex items-center justify-between border-b border-white/[.08] pb-5"><div><p className="text-xs uppercase tracking-[.2em] text-[#b99cff]">Today</p><p className="mt-1 text-lg font-medium">Wednesday, Oct 16</p></div><div className="grid size-9 place-items-center rounded-full bg-white/[.06] text-white/50"><SunMedium className="size-4" /></div></div><div className="mt-5 space-y-2">{[["09:00", "Deep work · Biology", "#8ab7ff", "90 min"],["12:30", "Lunch with Maya", "#ffae79", "45 min"],["16:00", "Gym session", "#8de7c1", "60 min"]].map(([time, label, color, duration], i) => <motion.div whileHover={{ x: 4 }} key={label} className="flex gap-3 rounded-2xl bg-white/[.035] p-3"><div className="w-11 pt-1 text-[11px] text-white/30">{time}</div><div className="flex-1 border-l-2 pl-3" style={{ borderColor: color }}><p className="text-sm font-medium">{label}</p><p className="mt-1 text-[11px] text-white/30">{duration} · Scheduled</p></div><div className="grid size-6 place-items-center rounded-full border border-white/15"><Check className="size-3 text-white/30" /></div></motion.div>)}</div><div className="mt-5 flex items-center justify-between rounded-2xl bg-[#b99cff]/[.08] p-4"><div><p className="text-xs text-white/35">Your day in balance</p><p className="mt-1 text-xl font-semibold">35% planned</p></div><div className="grid size-12 place-items-center rounded-full border-4 border-[#b99cff] border-r-white/10 text-[10px]">5h</div></div></motion.div>
+    </section>
+    <section className="border-y border-white/[.07] bg-white/[.02]"><div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 sm:grid-cols-3"><div className="flex gap-4"><Clock3 className="mt-1 size-5 text-[#b99cff]" /><div><p className="font-medium">See the shape of your day</p><p className="mt-2 text-sm leading-6 text-white/35">One clear timeline, no clutter.</p></div></div><div className="flex gap-4"><Sparkles className="mt-1 size-5 text-[#8de7c1]" /><div><p className="font-medium">Plan with intention</p><p className="mt-2 text-sm leading-6 text-white/35">Balance focus, health, and life.</p></div></div><div className="flex gap-4"><SunMedium className="mt-1 size-5 text-[#ffae79]" /><div><p className="font-medium">Leave room to breathe</p><p className="mt-2 text-sm leading-6 text-white/35">Your schedule should feel human.</p></div></div></div></section>
+    <section className="mx-auto max-w-6xl px-6 py-24 text-center"><p className="text-sm text-white/35">Start with one day.</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.05em]">Make it a good one.</h2><button onClick={() => navigate("/auth")} className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm transition hover:border-[#b99cff] hover:text-[#c9b5ff]">Open tempo <ArrowRight className="size-4" /></button></section>
+  </main>;
 }
