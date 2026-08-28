@@ -17,7 +17,7 @@ export default function Landing() {
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
-          <h1 className="sketch-title text-6xl sm:text-7xl mt-20 leading-[1.05]">
+          <h1 className="hero-display text-6xl sm:text-7xl mt-20 leading-[1.05]">
             your day,<br />
             <span className="text-[#8a8678]">drawn out.</span>
           </h1>
@@ -71,7 +71,7 @@ export default function Landing() {
         {/* CTA */}
         <div className="mt-20 text-center">
           <p className="sketch-label text-sm opacity-40">start with one day.</p>
-          <h2 className="sketch-title text-4xl mt-2">make it a good one.</h2>
+          <h2 className="hero-display text-4xl mt-2">make it a good one.</h2>
           <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-6">
             open thyme
           </button>
