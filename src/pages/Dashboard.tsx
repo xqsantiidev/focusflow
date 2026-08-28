@@ -17,6 +17,8 @@ const palette: Record<Category, { fill: string; pattern: "solid" | "stripe" | "d
   Free: { fill: "#b0bec5", pattern: "dots" },
 };
 const categoryIcons: Record<Category, React.FC<{ className?: string }>> = { Class: BookOpen, Study: Sparkles, Health: Dumbbell, Life: Users, Commute: ChevronRight, Free: Sparkles };
+const fallback = { fill: "#b0bec5", pattern: "solid" as const };
+const getCat = (c: string) => (palette as Record<string, typeof palette[Category]>)[c] || fallback;
 
 const defaultDay: Event[] = [
   { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "" },
@@ -32,7 +34,9 @@ const defaultDay: Event[] = [
   { id: 11, title: "Daredevil", start: "20:30", end: "21:15", category: "Free", note: "" },
 ];
 
-function readEvents(date: Date): Event[] { try { return JSON.parse(localStorage.getItem(`thyme-${date.toISOString().slice(0, 10)}`) || "null") || (date.toDateString() === new Date(2024, 9, 16).toDateString() ? defaultDay : []); } catch { return []; } }
+const validCats: Category[] = ["Class", "Study", "Health", "Life", "Commute", "Free"];
+function sanitize(events: Event[]): Event[] { return events.map(e => ({ ...e, category: validCats.includes(e.category as Category) ? e.category : "Study" })); }
+function readEvents(date: Date): Event[] { try { const raw = localStorage.getItem(`thyme-${date.toISOString().slice(0, 10)}`); return raw ? sanitize(JSON.parse(raw)) : (date.toDateString() === new Date(2024, 9, 16).toDateString() ? defaultDay : []); } catch { return []; } }
 function writeEvents(date: Date, events: Event[]) { localStorage.setItem(`thyme-${date.toISOString().slice(0, 10)}`, JSON.stringify(events)); }
 function toMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + m; }
 function fmtTime(t: string) { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "pm" : "am"}`; }
@@ -149,7 +153,7 @@ function SketchCircle({
 
       {/* Wedge segments */}
       {wedges.map(({ ev, d, midAngle, midR }, i) => {
-        const cat = palette[ev.category];
+        const cat = getCat(ev.category);
         const fillId = cat.pattern === "stripe" ? `url(#${patternId("Commute", "stripe")})`
           : cat.pattern === "dots" ? `url(#${patternId("Free", "dots")})`
           : cat.fill;
@@ -288,7 +292,7 @@ export default function Dashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="sketch-dot" style={{ backgroundColor: palette[active.category].fill }} />
+                    <span className="sketch-dot" style={{ backgroundColor: getCat(active.category).fill }} />
                     <span className="sketch-label text-xs uppercase">{active.category}</span>
                   </div>
                   <h3 className="sketch-title text-2xl">{active.title}</h3>
