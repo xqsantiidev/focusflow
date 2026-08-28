@@ -200,6 +200,7 @@ function SketchCircle({
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[620px] overflow-visible">
       <svg ref={svgRef} viewBox={`0 0 ${S} ${S}`} preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}
+        shapeRendering="geometricPrecision"
         onClick={handleClick} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}
         className="w-full touch-manipulation">
         <defs>
@@ -211,7 +212,6 @@ function SketchCircle({
             <rect width="10" height="10" fill="#b0bec5" />
             <circle cx="5" cy="5" r="2" fill="#1a1a18" />
           </pattern>
-          <filter id="sketch"><feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="3" result="warp" /><feDisplacementMap in="SourceGraphic" in2="warp" scale="1.5" /></filter>
         </defs>
 
         {/* Outer dotted guide */}
@@ -255,7 +255,8 @@ function SketchCircle({
           return (
             <g key={ev.id}>
               <motion.path ref={getPathRef(ev.id) as (el: any) => void}
-                d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
+                d={d} fill={fill} stroke="none"
+                shapeRendering="geometricPrecision"
                 initial={{ scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: isDraggingThis ? 0.92 : 1 }}
                 transition={isDraggingThis
@@ -289,7 +290,7 @@ function SketchCircle({
 
         {/* Inner circle */}
         {/* Clean inner circle: no displacement filter, keeping the geometry perfectly round */}
-        <circle cx={C} cy={C} r={innerR} fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="2.5" />
+        <circle cx={C} cy={C} r={innerR} fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="2.5" shapeRendering="geometricPrecision" />
 
         {/* Heat map ring (rendered on top) */}
         {heatMap && heatData.map((count, i) => {
