@@ -8,6 +8,7 @@ import { useNavigate } from "react-router";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type Event = { id: number; title: string; start: string; end: string; category: string; note: string; repeat: number[]; color?: string };
+type EnergyLog = { time: number; value: number; category?: string };
 type Template = { id: number; title: string; start: string; end: string; category: string; note: string; color?: string };
 type Palette = Record<string, string>;
 
@@ -50,6 +51,8 @@ function loadTemplates(): Template[] { try { return JSON.parse(localStorage.getI
 function saveTemplates(t: Template[]) { localStorage.setItem("thyme-templates", JSON.stringify(t)); }
 function loadPalette(): Palette { try { return { ...builtInPalette, ...JSON.parse(localStorage.getItem("thyme-palette") || "{}") }; } catch { return { ...builtInPalette }; } }
 function savePalette(p: Palette) { localStorage.setItem("thyme-palette", JSON.stringify(p)); }
+function loadEnergy(date: Date): EnergyLog[] { try { return JSON.parse(localStorage.getItem(`thyme-energy-${date.toISOString().slice(0, 10)}`) || "[]"); } catch { return []; } }
+function saveEnergy(date: Date, logs: EnergyLog[]) { localStorage.setItem(`thyme-energy-${date.toISOString().slice(0, 10)}`, JSON.stringify(logs)); }
 
 const defaultDay: Event[] = [
   { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "", repeat: [], color: undefined },
@@ -67,11 +70,11 @@ const defaultDay: Event[] = [
 
 /* ── Circle component ──────────────────────────────────────── */
 function SketchCircle({
-  events, selected, onSelect, onEmpty, palette, heatMap, onDragEnd,
+  events, selected, onSelect, onEmpty, palette, heatMap, energyLogs, onEnergyLog, onDragEnd,
 }: {
   events: Event[]; selected: number | null; onSelect: (id: number) => void;
   onEmpty: (time: string) => void; palette: Palette;
-  heatMap: boolean; onDragEnd: (id: number, newStart: string, newEnd: string) => void;
+  heatMap: boolean; energyLogs: EnergyLog[]; onEnergyLog: (value: number) => void; onDragEnd: (id: number, newStart: string, newEnd: string) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const S = 620, C = S / 2, innerR = 120, outerR = 238;
@@ -214,6 +217,8 @@ function SketchCircle({
           </pattern>
         </defs>
 
+        {/* Daylight band: sunrise 06:30, sunset 18:30 */}
+        <path d={buildPath(390, 1110)} fill="rgba(255, 193, 7, 0.08)" stroke="none" shapeRendering="geometricPrecision" />
         {/* Outer dotted guide */}
         <circle cx={C} cy={C} r={outerR + 12} fill="none" stroke="var(--sketch-line)" strokeWidth="2" strokeDasharray="4 6" strokeLinecap="round" opacity="0.5" shapeRendering="geometricPrecision" />
 
@@ -289,8 +294,27 @@ function SketchCircle({
         })}
 
         {/* Inner circle */}
-        {/* Clean inner circle: no displacement filter, keeping the geometry perfectly round */}
         <circle cx={C} cy={C} r={innerR} fill="var(--sketch-bg)" stroke="var(--sketch-line)" strokeWidth="2.5" shapeRendering="geometricPrecision" />
+        {/* Energy curve */}
+        {energyLogs.length > 0 && (() => {
+          const points = energyLogs.slice(-8).sort((a, b) => a.time - b.time).map(log => {
+            const angle = timeToAngle(log.time); const radius = 42 + log.value * 10;
+            return pt(radius, angle);
+          });
+          const curve = points.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
+          return <>
+            <path d={curve} fill="none" stroke="#e55b5b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" shapeRendering="geometricPrecision" />
+            {energyLogs.slice(-8).map(log => { const [x, y] = pt(42 + log.value * 10, timeToAngle(log.time)); return <circle key={`${log.time}-${log.value}`} cx={x} cy={y} r="4" fill={log.category ? getColor({ category: log.category } as Event, palette) : "#e55b5b"} stroke="var(--sketch-bg)" strokeWidth="2" />; })}
+          </>;
+        })()}
+        <foreignObject x={C - 76} y={C - 38} width="152" height="76" pointerEvents="none">
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <span className="sketch-label text-[10px] opacity-50">energy check-in</span>
+            <div className="pointer-events-auto mt-2 flex gap-1">
+              {[1, 2, 3, 4, 5].map(value => <button key={value} onClick={() => onEnergyLog(value)} className="grid size-6 place-items-center rounded-full border border-[var(--sketch-border)] text-[10px] transition hover:bg-[#e55b5b] hover:text-white">{value}</button>)}
+            </div>
+          </div>
+        </foreignObject>
 
         {/* Heat map ring (rendered on top) */}
         {heatMap && heatData.map((count, i) => {
@@ -337,6 +361,7 @@ export default function Dashboard() {
   const { signOut } = useAuth(); const navigate = useNavigate();
   const [date, setDate] = useState(() => new Date());
   const [events, setEvents] = useState<Event[]>(() => loadEvents(new Date()));
+  const [energyLogs, setEnergyLogs] = useState<EnergyLog[]>(() => loadEnergy(new Date()));
   const [selected, setSelected] = useState<number | null>(null);
   const [editing, setEditing] = useState<Event | null>(null);
   const [palette, setPalette] = useState<Palette>(loadPalette);
@@ -349,7 +374,8 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
   const gCal = useGoogleCalendar(date);
 
-  useEffect(() => { setEvents(loadEvents(date)); setSelected(null); }, [date]);
+  useEffect(() => { setEvents(loadEvents(date)); setEnergyLogs(loadEnergy(date)); setSelected(null); }, [date]);
+  useEffect(() => { saveEnergy(date, energyLogs); }, [energyLogs, date]);
   useEffect(() => { saveEvents(date, events); }, [events, date]);
   useEffect(() => { savePalette(palette); }, [palette]);
   useEffect(() => { saveTemplates(templates); }, [templates]);
@@ -359,6 +385,7 @@ export default function Dashboard() {
   const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
   const month = date.toLocaleDateString("en-US", { month: "long" });
   const moveDay = (n: number) => setDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));
+  const addEnergyLog = (value: number) => setEnergyLogs(logs => [...logs, { time: new Date().getHours() * 60 + new Date().getMinutes(), value, category: events.find(e => new Date().getHours() * 60 + new Date().getMinutes() >= toMin(e.start) && new Date().getHours() * 60 + new Date().getMinutes() < toMin(e.end))?.category }].slice(-12));
 
   const save = (ev: Event) => {
     setEvents(list => {
@@ -587,7 +614,7 @@ export default function Dashboard() {
         {/* Circle */}
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
           className="mt-8">
-          <SketchCircle events={events} selected={selected} onSelect={setSelected} palette={palette} heatMap={heatMap}
+          <SketchCircle events={events} selected={selected} onSelect={setSelected} palette={palette} heatMap={heatMap} energyLogs={energyLogs} onEnergyLog={addEnergyLog}
             onEmpty={time => setEditing({ id: Date.now(), title: "", start: time, end: minToStr(clamp(toMin(time) + 45, 0, 1439)), category: "Study", note: "", repeat: [], color: undefined })}
             onDragEnd={handleDragEnd} />
         </motion.div>
