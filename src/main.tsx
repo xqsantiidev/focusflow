@@ -41,6 +41,7 @@ function RouteSyncer() {
 
   useEffect(() => {
     function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin && event.source !== window.parent) return;
       if (event.data?.type === "navigate") {
         if (event.data.direction === "back") window.history.back();
         if (event.data.direction === "forward") window.history.forward();

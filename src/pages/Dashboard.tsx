@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Dumbbell, BookOpen, Users, Sparkles, Repeat, Bookmark, Sun, Moon, GripVertical, Calendar, RefreshCw, LinkIcon, Unlink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Repeat, Bookmark, Sun, Moon, Calendar, RefreshCw, Unlink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -15,7 +15,6 @@ type Palette = Record<string, string>;
 const builtInPalette: Palette = { Class: "#4caf50", Study: "#ffc107", Health: "#e91e63", Life: "#9c27b0", Commute: "#2196f3", Free: "#b0bec5" };
 const fallbackColor = "#b0bec5";
 const getColor = (ev: Event, palette: Palette) => ev.color || palette[ev.category] || fallbackColor;
-const iconMap: Record<string, React.FC<{ className?: string }>> = { Class: BookOpen, Study: Sparkles, Health: Dumbbell, Life: Users, Commute: ChevronRight, Free: Sparkles };
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /* ── Helpers ───────────────────────────────────────────────── */
@@ -35,7 +34,7 @@ function loadEvents(date: Date): Event[] {
     const raw = localStorage.getItem(keyFor(date));
     if (raw) return sanitizeEvents(JSON.parse(raw));
   } catch { /* ignore */ }
-  if (date.toDateString() === new Date(2024, 9, 16).toDateString()) return defaultDay;
+  if (date.toDateString() === new Date().toDateString()) return defaultDay;
   /* Seed from repeating blocks on other days */
   const repeating: Event[] = [];
   for (let i = 0; i < 7; i++) {
@@ -336,8 +335,8 @@ function SketchCircle({
 /* ── Main ──────────────────────────────────────────────────── */
 export default function Dashboard() {
   const { signOut } = useAuth(); const navigate = useNavigate();
-  const [date, setDate] = useState(new Date(2024, 9, 16));
-  const [events, setEvents] = useState<Event[]>(() => loadEvents(new Date(2024, 9, 16)));
+  const [date, setDate] = useState(() => new Date());
+  const [events, setEvents] = useState<Event[]>(() => loadEvents(new Date()));
   const [selected, setSelected] = useState<number | null>(null);
   const [editing, setEditing] = useState<Event | null>(null);
   const [palette, setPalette] = useState<Palette>(loadPalette);
@@ -381,7 +380,15 @@ export default function Dashboard() {
     setSelected(ev.id); setEditing(null);
   };
   const remove = (id: number) => {
+    const deleted = events.find(e => e.id === id);
     setEvents(list => list.filter(e => e.id !== id));
+    if (deleted) {
+      window.setTimeout(() => {
+        if (window.confirm(`Restore “${deleted.title}”?`)) {
+          setEvents(list => [...list, deleted].sort((a, b) => toMin(a.start) - toMin(b.start)));
+        }
+      }, 0);
+    }
     /* Clean up repeating storage */
     for (let i = 0; i < 7; i++) {
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay() + i);
@@ -398,7 +405,7 @@ export default function Dashboard() {
     setTemplates(list => [...list, t]);
   };
   const applyTemplate = (t: Template) => {
-    setEditing({ id: 0, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, repeat: [], color: t.color });
+    setEditing({ id: Date.now(), title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, repeat: [], color: t.color });
     setShowTemplates(false);
   };
   const updateColor = (cat: string, color: string) => setPalette(p => ({ ...p, [cat]: color }));
@@ -413,7 +420,7 @@ export default function Dashboard() {
         <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
           className="flex items-center justify-between">
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={() => setDate(new Date(2024, 9, 16))} className="sketch-link flex items-center gap-2 text-xl font-bold">
+            onClick={() => setDate(new Date())} className="sketch-link flex items-center gap-2 text-xl font-bold">
             thyme<span className="text-[#e55b5b]">.</span>
           </motion.button>
           <div className="flex items-center gap-3">
@@ -580,7 +587,7 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
           className="mt-8">
           <SketchCircle events={events} selected={selected} onSelect={setSelected} palette={palette} heatMap={heatMap}
-            onEmpty={time => setEditing({ id: 0, title: "", start: time, end: minToStr(clamp(toMin(time) + 45, 0, 1439)), category: "Study", note: "", repeat: [], color: undefined })}
+            onEmpty={time => setEditing({ id: Date.now(), title: "", start: time, end: minToStr(clamp(toMin(time) + 45, 0, 1439)), category: "Study", note: "", repeat: [], color: undefined })}
             onDragEnd={handleDragEnd} />
         </motion.div>
 
@@ -633,7 +640,7 @@ export default function Dashboard() {
             onClick={() => setShowTemplates(true)} className="sketch-btn"><Bookmark className="size-3.5" /> templates</motion.button>
           <motion.button whileHover={{ scale: 1.08, rotate: 90 }} whileTap={{ scale: 0.9, rotate: 45 }}
             transition={{ type: "spring", stiffness: 300, damping: 12 }}
-            onClick={() => setEditing({ id: 0, title: "", start: "12:00", end: "12:45", category: "Study", note: "", repeat: [], color: undefined })} className="sketch-fab">
+            onClick={() => setEditing({ id: Date.now(), title: "", start: "12:00", end: "12:45", category: "Study", note: "", repeat: [], color: undefined })} className="sketch-fab">
             <Plus className="size-5" />
           </motion.button>
         </motion.div>
