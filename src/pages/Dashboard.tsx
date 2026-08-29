@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useNavigate } from "react-router";
+import { CategoryBudgetPreview } from "@/components/CategoryBudgetPreview";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type Event = { id: number; title: string; start: string; end: string; category: string; note: string; repeat: number[]; color?: string };
@@ -433,9 +434,7 @@ export default function Dashboard() {
   useEffect(() => { if (cloudPalette?.colors) setPalette({ ...builtInPalette, ...(cloudPalette.colors as Palette) }); }, [cloudPalette]);
   useEffect(() => { savePalette(palette); if (cloudReady) void setCloudPalette({ colors: palette }); }, [palette, cloudReady, setCloudPalette]);
   useEffect(() => { saveTemplates(templates); if (cloudReady) void replaceTemplates({ templates: templates.map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) }); }, [templates, cloudReady, replaceTemplates]);
-  useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
-
-  const active = events.find(e => e.id === selected) || null;
+  useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);      const active = events.find(e => e.id === selected) || null;
   const activeDetail = active && pendingDragRef.current?.id === active.id
     ? { ...active, start: pendingDragRef.current.start, end: pendingDragRef.current.end }
     : active;
@@ -697,6 +696,8 @@ export default function Dashboard() {
             onEmpty={time => setEditing({ id: Date.now(), title: "", start: time, end: minToStr(clamp(toMin(time) + 45, 0, 1439)), category: "Study", note: "", repeat: [], color: undefined })}
             locationEnabled={locationEnabled} location={location} onDragEnd={handleDragEnd} />
         </motion.div>
+
+        <CategoryBudgetPreview />
 
         {/* Legend */}
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} transition={{ delay: 0.4 }}
