@@ -20,7 +20,7 @@ function Potion({ budget, delay = 0 }: { budget: Budget; delay?: number }) {
 
   const color = budget.color || "#b0bec5";
   const darker = color.replace(/^#/, "");
-  const rgb = darker.length === 6
+  const rgb = /^[0-9a-fA-F]{6}$/.test(darker)
     ? `${parseInt(darker.slice(0, 2), 16)}, ${parseInt(darker.slice(2, 4), 16)}, ${parseInt(darker.slice(4, 6), 16)}`
     : "176, 190, 197";
 
