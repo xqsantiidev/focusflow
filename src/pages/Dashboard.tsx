@@ -904,13 +904,11 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
   });
 
   const budgetData: Budget[] = Object.keys(palette).map(cat => ({
-    name: cat.toLowerCase(),
+    name: cat,
     color: palette[cat],
-    target: budgetTargets[cat] || 8,
+    target: budgetTargets[cat] ?? 8,
     used: Math.round((weekHours[cat] || 0) * 10) / 10,
   }));
-
-  const catCount = Object.keys(palette).length;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -937,10 +935,10 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
               <span className="sketch-label text-[11px] flex-1 capitalize">{b.name}</span>
               <span className="sketch-label text-[10px] opacity-40 w-8 text-right">{b.used.toFixed(1)}h</span>
               <div className="flex items-center gap-0.5">
-                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) - 0.5)}
+                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] ?? 8) - 0.5)}
                   className="size-5 rounded-md border border-[var(--sketch-border)] flex items-center justify-center text-[11px] opacity-50 hover:opacity-100 hover:border-[var(--sketch-fg)] transition">-</button>
-                <span className="sketch-label text-[10px] w-6 text-center font-medium">{budgetTargets[b.name] || 8}h</span>
-                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) + 0.5)}
+                <span className="sketch-label text-[10px] w-6 text-center font-medium">{budgetTargets[b.name] ?? 8}h</span>
+                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] ?? 8) + 0.5)}
                   className="size-5 rounded-md border border-[var(--sketch-border)] flex items-center justify-center text-[11px] opacity-50 hover:opacity-100 hover:border-[var(--sketch-fg)] transition">+</button>
               </div>
             </div>
