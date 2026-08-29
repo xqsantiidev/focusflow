@@ -898,7 +898,10 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
     }
   }
   const weekHours: Record<string, number> = {};
-  weekEvents.forEach(e => { weekHours[e.category] = (weekHours[e.category] || 0) + dur(e) / 60; });
+  weekEvents.forEach(e => {
+    const minutes = Math.max(0, toMin(e.end) - toMin(e.start));
+    weekHours[e.category] = (weekHours[e.category] || 0) + minutes / 60;
+  });
 
   const budgetData: Budget[] = Object.keys(palette).map(cat => ({
     name: cat.toLowerCase(),
