@@ -555,9 +555,10 @@ export default function Dashboard() {
                       <p className="sketch-label text-[11px]">location-based daylight</p>
                       <p className="sketch-body text-[10px] opacity-60">Uses your approximate location to estimate sunrise and sunset on the time wheel.</p>
                     </div>
-                    <button type="button" aria-pressed={locationEnabled} aria-label="Toggle location-based daylight" onClick={() => { const next = !locationEnabled; setLocationError(""); setLocationEnabled(next); localStorage.setItem("thyme-location-enabled", String(next)); }} className={`relative h-7 w-14 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a93d] focus-visible:ring-offset-2 ${locationEnabled ? "bg-[#e5a93d]" : "bg-[var(--sketch-border)]"}`}>
-                      <span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${locationEnabled ? "translate-x-8" : "translate-x-1"}`} />
-                    </button>
+                    <motion.button type="button" whileTap={{ scale: 0.96 }} aria-pressed={locationEnabled} aria-label="Toggle location-based daylight" onClick={() => { const next = !locationEnabled; setLocationError(""); setLocationEnabled(next); localStorage.setItem("thyme-location-enabled", String(next)); }} className={`group relative flex h-9 w-[118px] items-center gap-2 rounded-full border px-2 text-[10px] uppercase tracking-[0.12em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a93d] focus-visible:ring-offset-2 ${locationEnabled ? "border-[#e5a93d] bg-[#e5a93d]/15 text-[#b47a19]" : "border-[var(--sketch-border)] bg-[var(--sketch-bg)] text-[var(--sketch-muted)]"}`}>
+                      <span className={`flex size-6 items-center justify-center rounded-full shadow-sm transition-colors ${locationEnabled ? "bg-[#e5a93d] text-white" : "bg-[var(--sketch-border)] text-[var(--sketch-muted)]"}`}>{locationEnabled ? "✓" : "○"}</span>
+                      <span>{locationEnabled ? "on" : "use location"}</span>
+                    </motion.button>
                   </div>
                   {locating && <p className="sketch-label mt-2 text-[10px] opacity-60">locating...</p>}
                   {locationError && <p className="sketch-label mt-2 text-[10px] text-[#e55b5b]">{locationError}</p>}
