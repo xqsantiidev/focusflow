@@ -32,6 +32,7 @@ function dayOfYear(date: Date) {
 }
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 function round15(m: number) { return Math.round(m / 15) * 15; }
+function roundToMinute(m: number) { return Math.round(m); }
 function minToStr(m: number) { const h = Math.floor(m / 60) % 24; const mm = m % 60; return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`; }
 
 /* ── Persistence ───────────────────────────────────────────── */
@@ -87,6 +88,7 @@ function SketchCircle({
   const timeToAngle = (mins: number) => (mins / 1440) * Math.PI * 2 - Math.PI / 2;
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
+  const draggingRef = useRef<{ eventId: number; edge: "start" | "end" } | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => {
     try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; }
@@ -134,7 +136,7 @@ function SketchCircle({
     const r = Math.hypot(x, y);
     if (r < innerR - 10 || r > outerR + 90) return;
     let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2;
-    const mins = round15(a / (Math.PI * 2) * 1440);
+    const mins = clamp(roundToMinute(a / (Math.PI * 2) * 1440), 0, 1439);
     onEmpty(minToStr(mins));
   };
 
@@ -154,25 +156,28 @@ function SketchCircle({
     (e.target as SVGElement).setPointerCapture(e.pointerId);
     const ev = events.find(ev2 => ev2.id === eventId);
     if (ev) animAngles.current.set(eventId, { start: toMin(ev.start), end: toMin(ev.end) });
-    setDragging({ eventId, edge });
+    const nextDragging = { eventId, edge } as const;
+    draggingRef.current = nextDragging;
+    setDragging(nextDragging);
   };
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragging || !svgRef.current) return;
+    const activeDrag = draggingRef.current;
+    if (!activeDrag || !svgRef.current) return;
     const [x, y] = svgXY(e);
     const r = Math.hypot(x, y);
     if (r < innerR || r > outerR + 60) return;
     let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2;
-    const mins = round15(a / (Math.PI * 2) * 1440);
-    const ev = events.find(ev2 => ev2.id === dragging.eventId);
+    const mins = clamp(roundToMinute(a / (Math.PI * 2) * 1440), 0, 1439);
+    const ev = events.find(ev2 => ev2.id === activeDrag.eventId);
     if (!ev) return;
     const cur = animAngles.current.get(ev.id);
     if (!cur) return;
     const startMin = cur.start; const endMin = cur.end;
     let newStart = startMin, newEnd = endMin;
-    if (dragging.edge === "start") {
-      if (mins < endMin && endMin - mins >= 15) newStart = mins;
+    if (activeDrag.edge === "start") {
+      if (mins < endMin && endMin - mins >= 1) newStart = mins;
     } else {
-      if (mins > startMin && mins - startMin >= 15) newEnd = mins;
+      if (mins > startMin && mins - startMin >= 1) newEnd = mins;
     }
     if (newStart !== startMin || newEnd !== endMin) {
       animAngles.current.set(ev.id, { start: newStart, end: newEnd });
@@ -180,9 +185,10 @@ function SketchCircle({
     }
   };
   const handlePointerUp = () => {
-    if (dragging) {
+    const finishedDrag = draggingRef.current;
+    if (finishedDrag) {
       justDraggedRef.current = true;
-      const finishedDrag = dragging;
+      draggingRef.current = null;
       const ev = events.find(ev2 => ev2.id === finishedDrag.eventId);
       const cur = ev ? animAngles.current.get(ev.id) : null;
       if (ev && cur) {
