@@ -98,11 +98,11 @@ function SketchCircle({
       setLocation(next); localStorage.setItem("thyme-location", JSON.stringify(next));
     }, () => undefined, { timeout: 8000 });
   }, [locationEnabled]);
-  const [dragTick, setDragTick] = useState(0);
   const justDraggedRef = useRef(false);
   const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
   const animAngles = useRef<Map<number, { start: number; end: number }>>(new Map());
   const animFrameRef = useRef<number>(0);
+  const [, forceDragRender] = useState(0);
   /* Stable ref callback per event id — avoids creating new function refs */
   const pathRefCallbacks = useRef<Record<number, (el: SVGPathElement | null) => void>>({});
   const getPathRef = (id: number) => {
@@ -176,7 +176,7 @@ function SketchCircle({
     }
     if (newStart !== startMin || newEnd !== endMin) {
       animAngles.current.set(ev.id, { start: newStart, end: newEnd });
-      setDragTick(t => t + 1);
+      forceDragRender(t => t + 1);
     }
   };
   const handlePointerUp = () => {
@@ -188,17 +188,16 @@ function SketchCircle({
         const snapS = round15(cur.start); const snapE = round15(cur.end);
         /* Animate bounce-back to snapped position */
         const targetStart = snapS, targetEnd = snapE;
-        const path = pathRefs.current.get(ev.id);
         let frameS = cur.start, frameE = cur.end;
         const animate = () => {
           frameS = springLerp(frameS, targetStart, 0.2);
           frameE = springLerp(frameE, targetEnd, 0.2);
-          if (path) path.setAttribute("d", buildPath(frameS, frameE));
+          forceDragRender(t => t + 1);
           if (Math.abs(frameS - targetStart) > 0.3 || Math.abs(frameE - targetEnd) > 0.3) {
             animFrameRef.current = requestAnimationFrame(animate);
           } else {
-            if (path) path.setAttribute("d", buildPath(targetStart, targetEnd));
             animAngles.current.set(ev.id, { start: targetStart, end: targetEnd });
+            forceDragRender(t => t + 1);
             onDragEnd(ev.id, minToStr(targetStart), minToStr(targetEnd));
           }
         };
