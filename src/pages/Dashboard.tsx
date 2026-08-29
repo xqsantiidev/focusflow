@@ -869,11 +869,11 @@ function GoogleClientIdInput() {
 }
 
 /* ── Stats / Heatmap View ──────────────────────────────────── */
-const STATS_GRAPHS = ["busiest days", "hourly activity", "daily hours", "category ring"] as const;
+const STATS_GRAPHS = ["category budgets", "busiest days", "hourly activity", "daily hours", "category ring"] as const;
 type StatsGraph = (typeof STATS_GRAPHS)[number];
 
 function StatsView({ onClose, palette, currentDate }: { onClose: () => void; palette: Palette; currentDate: Date }) {
-  const [graph, setGraph] = useState<StatsGraph>("busiest days");
+  const [graph, setGraph] = useState<StatsGraph>("category budgets");
   const graphIdx = STATS_GRAPHS.indexOf(graph);
   const prevGraph = () => setGraph(STATS_GRAPHS[(graphIdx - 1 + STATS_GRAPHS.length) % STATS_GRAPHS.length]);
   const nextGraph = () => setGraph(STATS_GRAPHS[(graphIdx + 1) % STATS_GRAPHS.length]);
@@ -979,6 +979,12 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
         </motion.div>
 
         {/* ── Graph: Busiest Days ── */}
+        {graph === "category budgets" && (
+          <motion.div key="category-budgets" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6">
+            <CategoryBudgetPreview compact />
+          </motion.div>
+        )}
+
         {graph === "busiest days" && (
           <motion.div key="busiest" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
             transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6">
