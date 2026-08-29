@@ -265,8 +265,13 @@ function SketchCircle({
         {/* Wedge segments */}
         {events.map((ev, i) => {
           const a = animAngles.current.get(ev.id);
+          /* During a drag, the preview geometry is intentionally local to the
+             wheel. Never use it for labels: doing so makes the displayed time
+             race through every pointer frame and can make narrow blocks vanish. */
           const sMin = a ? a.start : toMin(ev.start);
           const eMin = a ? a.end : toMin(ev.end);
+          const labelStart = toMin(ev.start);
+          const labelEnd = toMin(ev.end);
           const d = buildPath(sMin, eMin);
           const color = getColor(ev, palette);
           const fill = ev.category === "Commute" ? "url(#pat-stripe)" : ev.category === "Free" ? "url(#pat-dots)" : color;
@@ -295,11 +300,9 @@ function SketchCircle({
               <motion.path ref={getPathRef(ev.id) as (el: any) => void}
                 d={d} fill={fill} stroke="none"
                 shapeRendering="geometricPrecision"
-                initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: isDraggingThis ? 0.92 : 1 }}
-                transition={isDraggingThis
-                  ? { type: "spring", stiffness: 120, damping: 14 }
-                  : { delay: i * 0.04, type: "spring", stiffness: 260, damping: 18 }}
+                initial={false}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0 }}
                 whileHover={{ scale: isSel ? 1 : 1.01 }}
                 className="cursor-pointer" onClick={e => { e.stopPropagation(); onSelect(ev.id); }}
                 style={{ transformOrigin: `${C}px ${C}px` }} />
@@ -320,7 +323,7 @@ function SketchCircle({
               {/* Title — SA Long Beach for soft, personal handwriting look */}
               <text x={lx} y={ly - 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="600" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
               {/* Time sits on its own baseline so it never collides with the title. */}
-              <text x={lx} y={ly + 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="600" opacity="0.95">{fmtTime(ev.start)} - {fmtTime(ev.end)}</text>
+              <text x={lx} y={ly + 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="600" opacity="0.95">{fmtTime(minToStr(labelStart))} - {fmtTime(minToStr(labelEnd))}</text>
               <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" shapeRendering="geometricPrecision" />
             </g>
           );
@@ -403,6 +406,7 @@ export default function Dashboard() {
   const replaceTemplates = useMutation(api.planner.replaceTemplates);
   const setCloudPalette = useMutation(api.planner.setPalette);
   const [cloudReady, setCloudReady] = useState(false);
+  const pendingDragRef = useRef<{ id: number; start: string; end: string } | null>(null);
 
   useEffect(() => {
     if (cloudEvents === undefined) return;
@@ -419,6 +423,9 @@ export default function Dashboard() {
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
   const active = events.find(e => e.id === selected) || null;
+  const activeDetail = active && pendingDragRef.current?.id === active.id
+    ? { ...active, start: pendingDragRef.current.start, end: pendingDragRef.current.end }
+    : active;
   const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
   const month = date.toLocaleDateString("en-US", { month: "long" });
   const moveDay = (n: number) => setDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));
@@ -462,7 +469,11 @@ export default function Dashboard() {
     setPendingDelete(null);
   };
   const handleDragEnd = (id: number, newStart: string, newEnd: string) => {
+    pendingDragRef.current = { id, start: newStart, end: newEnd };
     setEvents(list => list.map(e => e.id === id ? { ...e, start: newStart, end: newEnd } : e).sort((a, b) => toMin(a.start) - toMin(b.start)));
+    window.setTimeout(() => {
+      if (pendingDragRef.current?.id === id) pendingDragRef.current = null;
+    }, 0);
   };
   const addTemplate = (ev: Event) => {
     const t: Template = { id: Date.now(), title: ev.title, start: ev.start, end: ev.end, category: ev.category, note: ev.note, color: ev.color };
@@ -683,27 +694,27 @@ export default function Dashboard() {
 
         {/* Selected detail */}
         <AnimatePresence>
-          {active && (
-            <motion.div key={`detail-${active.id}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="sketch-card mt-6">
+          {activeDetail && (
+            <motion.div key={`detail-${activeDetail.id}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="sketch-card mt-6">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="sketch-dot" style={{ backgroundColor: getColor(active, palette) }} />
-                    <span className="sketch-label text-xs uppercase">{active.category}</span>
-                    {(active.repeat || []).length > 0 && <Repeat className="size-3 opacity-40" />}
+                    <span className="sketch-dot" style={{ backgroundColor: getColor(activeDetail, palette) }} />
+                    <span className="sketch-label text-xs uppercase">{activeDetail.category}</span>
+                    {(activeDetail.repeat || []).length > 0 && <Repeat className="size-3 opacity-40" />}
                   </div>
-                  <h3 className="sketch-title text-2xl">{active.title}</h3>
-                  <p className="sketch-label text-sm mt-1">{fmtTime(active.start)} — {fmtTime(active.end)} · {dur(active)} min</p>
-                  {(active.repeat || []).length > 0 && (
-                    <p className="sketch-label text-[10px] mt-1 opacity-50">repeats {(active.repeat || []).map((d: number) => dayNames[d]).join(", ")}</p>
+                  <h3 className="sketch-title text-2xl">{activeDetail.title}</h3>
+                  <p className="sketch-label text-sm mt-1">{fmtTime(activeDetail.start)} — {fmtTime(activeDetail.end)} · {dur(activeDetail)} min</p>
+                  {(activeDetail.repeat || []).length > 0 && (
+                    <p className="sketch-label text-[10px] mt-1 opacity-50">repeats {(activeDetail.repeat || []).map((d: number) => dayNames[d]).join(", ")}</p>
                   )}
                 </div>
               </div>
-              {active.note && <p className="sketch-body text-sm mt-3 opacity-60">{active.note}</p>}
+              {activeDetail.note && <p className="sketch-body text-sm mt-3 opacity-60">{activeDetail.note}</p>}
               <div className="flex gap-2 mt-4">
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setEditing(active)} className="sketch-btn"><Edit3 className="size-3.5" /> edit</motion.button>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => addTemplate(active)} className="sketch-btn"><Bookmark className="size-3.5" /> save as template</motion.button>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => remove(active.id)} className="sketch-btn sketch-btn-danger"><Trash2 className="size-3.5" /> remove</motion.button>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setEditing(activeDetail)} className="sketch-btn"><Edit3 className="size-3.5" /> edit</motion.button>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => addTemplate(activeDetail)} className="sketch-btn"><Bookmark className="size-3.5" /> save as template</motion.button>
+                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => remove(activeDetail.id)} className="sketch-btn sketch-btn-danger"><Trash2 className="size-3.5" /> remove</motion.button>
               </div>
             </motion.div>
           )}
