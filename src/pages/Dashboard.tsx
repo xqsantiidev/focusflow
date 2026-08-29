@@ -412,6 +412,8 @@ export default function Dashboard() {
   const cloudEvents = useQuery(api.planner.listEvents, { day: dayKey });
   const cloudTemplates = useQuery(api.planner.listTemplates);
   const cloudPalette = useQuery(api.planner.getPalette);
+  const upsertCloudEvent = useMutation(api.planner.upsertEvent);
+  const deleteCloudEvent = useMutation(api.planner.deleteEvent);
   const replaceDayEvents = useMutation(api.planner.replaceDayEvents);
   const replaceTemplates = useMutation(api.planner.replaceTemplates);
   const setCloudPalette = useMutation(api.planner.setPalette);
@@ -425,7 +427,7 @@ export default function Dashboard() {
     else if (cloudEvents.length === 0) void replaceDayEvents({ day: dayKey, events: loadEvents(date).map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) });
     setCloudReady(true);
   }, [cloudEvents, cloudReady, date, dayKey, replaceDayEvents]);
-  useEffect(() => { if (cloudReady) { saveEvents(date, events); void replaceDayEvents({ day: dayKey, events: events.map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) }); } }, [events, date, dayKey, cloudReady, replaceDayEvents]);
+  useEffect(() => { if (cloudReady) saveEvents(date, events); }, [events, date, cloudReady]);
   useEffect(() => { if (cloudTemplates && cloudTemplates.length === 0) void replaceTemplates({ templates: loadTemplates().map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) }); else if (cloudTemplates) setTemplates(cloudTemplates.map(({ templateId, title, start, end, category, note, color }) => ({ id: templateId, title, start, end, category, note, color }))); }, [cloudTemplates, replaceTemplates]);
   useEffect(() => { if (cloudPalette?.colors) setPalette({ ...builtInPalette, ...(cloudPalette.colors as Palette) }); }, [cloudPalette]);
   useEffect(() => { savePalette(palette); if (cloudReady) void setCloudPalette({ colors: palette }); }, [palette, cloudReady, setCloudPalette]);
@@ -445,6 +447,7 @@ export default function Dashboard() {
       const next = list.some(x => x.id === ev.id) ? list.map(x => x.id === ev.id ? ev : x) : [...list, ev];
       return next.sort((a, b) => toMin(a.start) - toMin(b.start));
     });
+    void upsertCloudEvent({ eventId: ev.id, day: dayKey, title: ev.title, start: ev.start, end: ev.end, category: ev.category, note: ev.note, repeat: ev.repeat || [], color: ev.color });
     /* If repeating, also save to dow storage */
     if ((ev.repeat || []).length > 0) {
       ev.repeat.forEach(dow => {
@@ -469,6 +472,7 @@ export default function Dashboard() {
     if (!pendingDelete) return;
     const id = pendingDelete.id;
     setEvents(list => list.filter(e => e.id !== id));
+    void deleteCloudEvent({ day: dayKey, eventId: id });
     /* Clean up repeating storage */
     for (let i = 0; i < 7; i++) {
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay() + i);
@@ -480,6 +484,8 @@ export default function Dashboard() {
   };
   const handleDragEnd = (id: number, newStart: string, newEnd: string) => {
     pendingDragRef.current = { id, start: newStart, end: newEnd };
+    const updated = events.find(e => e.id === id);
+    if (updated) void upsertCloudEvent({ eventId: id, day: dayKey, title: updated.title, start: newStart, end: newEnd, category: updated.category, note: updated.note, repeat: updated.repeat || [], color: updated.color });
     setEvents(list => list.map(e => e.id === id ? { ...e, start: newStart, end: newEnd } : e).sort((a, b) => toMin(a.start) - toMin(b.start)));
     window.setTimeout(() => {
       if (pendingDragRef.current?.id === id) pendingDragRef.current = null;

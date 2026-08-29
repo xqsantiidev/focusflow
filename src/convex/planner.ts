@@ -21,6 +21,20 @@ export const listEvents = query({ args: { day: v.string() }, handler: async (ctx
   return await ctx.db.query("events").withIndex("by_user_day", q => q.eq("userId", uid).eq("day", day)).collect();
 }});
 
+export const upsertEvent = mutation({ args: eventArgs, handler: async (ctx, event) => {
+  const uid = await userId(ctx);
+  const existing = await ctx.db.query("events").withIndex("by_user_day", q => q.eq("userId", uid).eq("day", event.day)).collect();
+  const row = existing.find(item => item.eventId === event.eventId);
+  if (row) await ctx.db.patch(row._id, { ...event, userId: uid });
+  else await ctx.db.insert("events", { ...event, userId: uid });
+}});
+
+export const deleteEvent = mutation({ args: { day: v.string(), eventId: v.number() }, handler: async (ctx, { day, eventId }) => {
+  const uid = await userId(ctx);
+  const existing = await ctx.db.query("events").withIndex("by_user_day", q => q.eq("userId", uid).eq("day", day)).collect();
+  for (const row of existing.filter(item => item.eventId === eventId)) await ctx.db.delete(row._id);
+}});
+
 export const replaceDayEvents = mutation({ args: { day: v.string(), events: v.array(v.object(eventArgs)) }, handler: async (ctx, { day, events }) => {
   const uid = await userId(ctx);
   const existing = await ctx.db.query("events").withIndex("by_user_day", q => q.eq("userId", uid).eq("day", day)).collect();
