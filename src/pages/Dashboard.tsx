@@ -886,11 +886,16 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
     setBudgetTargets(prev => { const next = { ...prev, [cat]: Math.max(0.5, val) }; saveBudgetTargets(next); return next; });
   };
 
-  /* Load full week for weekly totals */
+  /* Load full week for weekly totals — use live events prop for today */
   const weekEvents: Event[] = [];
+  const todayKey = currentDate.toDateString();
   for (let i = 0; i < 7; i++) {
     const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
-    weekEvents.push(...loadEvents(d));
+    if (d.toDateString() === todayKey) {
+      weekEvents.push(...events);
+    } else {
+      weekEvents.push(...loadEvents(d));
+    }
   }
   const weekHours: Record<string, number> = {};
   weekEvents.forEach(e => { weekHours[e.category] = (weekHours[e.category] || 0) + dur(e) / 60; });
