@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useNavigate } from "react-router";
-import { CategoryBudgetPreview } from "@/components/CategoryBudgetPreview";
+import { CategoryBudgetPreview, Budget } from "@/components/CategoryBudgetPreview";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type Event = { id: number; title: string; start: string; end: string; category: string; note: string; repeat: number[]; color?: string };
@@ -61,6 +61,11 @@ function loadPalette(): Palette { try { return { ...builtInPalette, ...JSON.pars
 function savePalette(p: Palette) { localStorage.setItem("thyme-palette", JSON.stringify(p)); }
 function loadEnergy(date: Date): EnergyLog[] { try { return JSON.parse(localStorage.getItem(`thyme-energy-${date.toISOString().slice(0, 10)}`) || "[]"); } catch { return []; } }
 function saveEnergy(date: Date, logs: EnergyLog[]) { localStorage.setItem(`thyme-energy-${date.toISOString().slice(0, 10)}`, JSON.stringify(logs)); }
+
+/* ── Budget targets persistence ──────────────────────────── */
+const defaultTargets: Record<string, number> = { Study: 8, Health: 5, Life: 6, Class: 12 };
+function loadBudgetTargets(): Record<string, number> { try { return { ...defaultTargets, ...JSON.parse(localStorage.getItem("thyme-budget-targets") || "{}") }; } catch { return { ...defaultTargets }; } }
+function saveBudgetTargets(targets: Record<string, number>) { localStorage.setItem("thyme-budget-targets", JSON.stringify(targets)); }
 
 const defaultDay: Event[] = [
   { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "", repeat: [], color: undefined },
@@ -697,7 +702,6 @@ export default function Dashboard() {
             locationEnabled={locationEnabled} location={location} onDragEnd={handleDragEnd} />
         </motion.div>
 
-        <CategoryBudgetPreview />
 
         {/* Legend */}
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 0.5 }} transition={{ delay: 0.4 }}
@@ -874,6 +878,10 @@ type StatsGraph = (typeof STATS_GRAPHS)[number];
 
 function StatsView({ onClose, palette, currentDate }: { onClose: () => void; palette: Palette; currentDate: Date }) {
   const [graph, setGraph] = useState<StatsGraph>("category budgets");
+  const [budgetTargets, setBudgetTargets] = useState<Record<string, number>>(loadBudgetTargets);
+  const updateTarget = (cat: string, val: number) => {
+    setBudgetTargets(prev => { const next = { ...prev, [cat]: Math.max(0.5, val) }; saveBudgetTargets(next); return next; });
+  };
   const graphIdx = STATS_GRAPHS.indexOf(graph);
   const prevGraph = () => setGraph(STATS_GRAPHS[(graphIdx - 1 + STATS_GRAPHS.length) % STATS_GRAPHS.length]);
   const nextGraph = () => setGraph(STATS_GRAPHS[(graphIdx + 1) % STATS_GRAPHS.length]);
@@ -912,6 +920,16 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
   weekEvents.forEach(e => { catCounts[e.category] = (catCounts[e.category] || 0) + dur(e); });
   const totalMin = Object.values(catCounts).reduce((a, b) => a + b, 0) || 1;
   const catList = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+
+  /* Category budgets for cups view */
+  const budgetHours: Record<string, number> = {};
+  weekEvents.forEach(e => { budgetHours[e.category] = (budgetHours[e.category] || 0) + dur(e) / 60; });
+  const budgetData: Budget[] = Object.keys(palette).map(cat => ({
+    name: cat.toLowerCase(),
+    color: palette[cat],
+    target: budgetTargets[cat] || 8,
+    used: Math.round((budgetHours[cat] || 0) * 10) / 10,
+  }));
 
   /* Total stats */
   const totalBlocks = weekEvents.length;
@@ -981,7 +999,24 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
         {/* ── Graph: Busiest Days ── */}
         {graph === "category budgets" && (
           <motion.div key="category-budgets" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ type: "spring", stiffness: 300, damping: 22 }} className="mb-6">
-            <CategoryBudgetPreview compact />
+            <CategoryBudgetPreview compact budgets={budgetData} />
+            {/* Edit targets */}
+            <div className="mt-4 space-y-2">
+              <p className="sketch-label text-[11px] opacity-60">weekly targets (hrs)</p>
+              {budgetData.map(b => (
+                <div key={b.name} className="flex items-center gap-2">
+                  <span className="sketch-dot" style={{ backgroundColor: b.color }} />
+                  <span className="sketch-label text-[11px] w-16 capitalize">{b.name}</span>
+                  <span className="sketch-label text-[11px] opacity-50 w-10 text-right">{b.used.toFixed(1)}h</span>
+                  <span className="sketch-label text-[10px] opacity-30">/</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) - 0.5)} className="sketch-label text-[14px] opacity-50 hover:opacity-100 leading-none px-1">-</button>
+                    <span className="sketch-label text-[11px] w-8 text-center font-medium">{budgetTargets[b.name] || 8}h</span>
+                    <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) + 0.5)} className="sketch-label text-[14px] opacity-50 hover:opacity-100 leading-none px-1">+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
 
