@@ -693,9 +693,9 @@ export default function Dashboard() {
                     {(active.repeat || []).length > 0 && <Repeat className="size-3 opacity-40" />}
                   </div>
                   <h3 className="sketch-title text-2xl">{active.title}</h3>
-                  <p key={`${active.id}-${active.start}-${active.end}`} className="sketch-label text-sm mt-1">{fmtTime(active.start)} — {fmtTime(active.end)} · {dur(active)} min</p>
+                  <p className="sketch-label text-sm mt-1">{fmtTime(active.start)} — {fmtTime(active.end)} · {dur(active)} min</p>
                   {(active.repeat || []).length > 0 && (
-                    <p className="sketch-label text-[10px] mt-1 opacity-50">repeats {(active.repeat || []).map(d => dayNames[d]).join(", ")}</p>
+                    <p className="sketch-label text-[10px] mt-1 opacity-50">repeats {(active.repeat || []).map((d: number) => dayNames[d]).join(", ")}</p>
                   )}
                 </div>
               </div>
