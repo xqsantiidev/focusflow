@@ -87,16 +87,17 @@ function SketchCircle({
   const timeToAngle = (mins: number) => (mins / 1440) * Math.PI * 2 - Math.PI / 2;
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
+  const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => {
     try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; }
   });
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!locationEnabled || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(pos => {
       const next = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
       setLocation(next); localStorage.setItem("thyme-location", JSON.stringify(next));
     }, () => undefined, { timeout: 8000 });
-  }, []);
+  }, [locationEnabled]);
   const [dragTick, setDragTick] = useState(0);
   const justDraggedRef = useRef(false);
   const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
@@ -235,7 +236,7 @@ function SketchCircle({
 
         {/* Location-aware daylight markers: sunrise/sunset are estimated from the saved latitude. */}
         {(() => {
-          const latitude = location?.latitude ?? 40;
+          const latitude = locationEnabled ? (location?.latitude ?? 40) : 40;
           const seasonal = Math.sin(((dayOfYear(new Date()) - 80) / 365) * Math.PI * 2);
           const daylight = 12 + Math.max(-2, Math.min(2, latitude / 45)) * seasonal * 2;
           const sunrise = Math.round((12 - daylight / 2) * 60);
@@ -346,7 +347,7 @@ function SketchCircle({
           const nowMins = now.getHours() * 60 + now.getMinutes();
           const a = timeToAngle(nowMins);
           const nowR = innerR + 14;
-          const latitude = location?.latitude ?? 40;
+          const latitude = locationEnabled ? (location?.latitude ?? 40) : 40;
           const seasonal = Math.sin(((now.getDate() - 80) / 365) * Math.PI * 2);
           const daylight = 12 + Math.max(-2, Math.min(2, latitude / 45)) * seasonal * 2;
           const sunrise = (12 - daylight / 2) * 60;
@@ -391,6 +392,8 @@ export default function Dashboard() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
+  const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => { try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; } });
   const gCal = useGoogleCalendar(date);
 
   const dayKey = date.toISOString().slice(0, 10);
@@ -519,6 +522,18 @@ export default function Dashboard() {
               className="overflow-hidden mt-4">
               <div className="sketch-card">
                 <p className="sketch-label text-xs mb-3">customize categories & colors</p>
+                <div className="mb-4 rounded-lg border border-[var(--sketch-border)] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="sketch-label text-[11px]">location-based daylight</p>
+                      <p className="sketch-body text-[10px] opacity-60">Uses your approximate location to estimate sunrise and sunset on the time wheel.</p>
+                    </div>
+                    <button type="button" aria-pressed={locationEnabled} onClick={() => { const next = !locationEnabled; setLocationEnabled(next); localStorage.setItem("thyme-location-enabled", String(next)); }} className={`h-5 w-10 rounded-full relative transition-colors ${locationEnabled ? "bg-[#e5a93d]" : "bg-[var(--sketch-border)]"}`}>
+                      <span className={`absolute top-0.5 size-4 rounded-full bg-white transition-transform ${locationEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                    </button>
+                  </div>
+                  {location && <button type="button" onClick={() => { setLocation(null); localStorage.removeItem("thyme-location"); }} className="sketch-label mt-2 text-[10px] text-[#e55b5b] hover:underline">clear saved location</button>}
+                </div>
                 <div className="space-y-2 mb-4">
                   {Object.keys(palette).map(cat => (
                     <div key={cat} className="flex items-center gap-2 text-xs">
