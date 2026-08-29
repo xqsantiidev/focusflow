@@ -182,10 +182,14 @@ function SketchCircle({
   const handlePointerUp = () => {
     if (dragging) {
       justDraggedRef.current = true;
-      const ev = events.find(ev2 => ev2.id === dragging.eventId);
+      const finishedDrag = dragging;
+      const ev = events.find(ev2 => ev2.id === finishedDrag.eventId);
       const cur = ev ? animAngles.current.get(ev.id) : null;
       if (ev && cur) {
-        const snapS = round15(cur.start); const snapE = round15(cur.end);
+        /* The drag preview is already snapped on every pointer move. Commit
+           exactly that preview; re-snapping from a stale event is what caused
+           the end time to jump back by a slot after release. */
+        const snapS = cur.start; const snapE = cur.end;
         /* Animate bounce-back to snapped position */
         const targetStart = snapS, targetEnd = snapE;
         let frameS = cur.start, frameE = cur.end;
@@ -193,7 +197,7 @@ function SketchCircle({
           frameS = springLerp(frameS, targetStart, 0.2);
           frameE = springLerp(frameE, targetEnd, 0.2);
           forceDragRender(t => t + 1);
-          if (Math.abs(frameS - targetStart) > 0.3 || Math.abs(frameE - targetEnd) > 0.3) {
+          if (Math.abs(frameS - targetStart) > 0.05 || Math.abs(frameE - targetEnd) > 0.05) {
             animFrameRef.current = requestAnimationFrame(animate);
           } else {
             animAngles.current.set(ev.id, { start: targetStart, end: targetEnd });
