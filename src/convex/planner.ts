@@ -51,6 +51,20 @@ export const replaceTemplates = mutation({ args: { templates: v.array(v.object(t
   for (const template of templates) await ctx.db.insert("templates", { ...template, userId: uid });
 }});
 
+export const upsertTemplate = mutation({ args: templateArgs, handler: async (ctx, template) => {
+  const uid = await userId(ctx);
+  const existing = await ctx.db.query("templates").withIndex("by_user", q => q.eq("userId", uid)).collect();
+  const row = existing.find(item => item.templateId === template.templateId);
+  if (row) await ctx.db.patch(row._id, { ...template, userId: uid });
+  else await ctx.db.insert("templates", { ...template, userId: uid });
+}});
+
+export const deleteTemplate = mutation({ args: { templateId: v.number() }, handler: async (ctx, { templateId }) => {
+  const uid = await userId(ctx);
+  const existing = await ctx.db.query("templates").withIndex("by_user", q => q.eq("userId", uid)).collect();
+  for (const row of existing.filter(item => item.templateId === templateId)) await ctx.db.delete(row._id);
+}});
+
 export const getPalette = query({ args: {}, handler: async ctx => {
   const uid = await userId(ctx); return await ctx.db.query("palette").withIndex("by_user", q => q.eq("userId", uid)).first();
 }});

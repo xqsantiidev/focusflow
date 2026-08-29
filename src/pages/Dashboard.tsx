@@ -417,6 +417,8 @@ export default function Dashboard() {
   const upsertCloudEvent = useMutation(api.planner.upsertEvent);
   const deleteCloudEvent = useMutation(api.planner.deleteEvent);
   const replaceDayEvents = useMutation(api.planner.replaceDayEvents);
+  const upsertCloudTemplate = useMutation(api.planner.upsertTemplate);
+  const deleteCloudTemplate = useMutation(api.planner.deleteTemplate);
   const replaceTemplates = useMutation(api.planner.replaceTemplates);
   const setCloudPalette = useMutation(api.planner.setPalette);
   const [cloudReady, setCloudReady] = useState(false);
@@ -430,10 +432,18 @@ export default function Dashboard() {
     setCloudReady(true);
   }, [cloudEvents, cloudReady, date, dayKey, replaceDayEvents]);
   useEffect(() => { if (cloudReady) saveEvents(date, events); }, [events, date, cloudReady]);
-  useEffect(() => { if (cloudTemplates && cloudTemplates.length === 0) void replaceTemplates({ templates: loadTemplates().map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) }); else if (cloudTemplates) setTemplates(cloudTemplates.map(({ templateId, title, start, end, category, note, color }) => ({ id: templateId, title, start, end, category, note, color }))); }, [cloudTemplates, replaceTemplates]);
+  /* One-time import: seed cloud from localStorage on first load, then cloud is the source of truth. */
+  useEffect(() => {
+    if (!cloudTemplates) return;
+    if (cloudTemplates.length === 0) {
+      void replaceTemplates({ templates: loadTemplates().map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) });
+    } else {
+      setTemplates(cloudTemplates.map(({ templateId, title, start, end, category, note, color }) => ({ id: templateId, title, start, end, category, note, color })));
+    }
+  }, [cloudTemplates, replaceTemplates]);
   useEffect(() => { if (cloudPalette?.colors) setPalette({ ...builtInPalette, ...(cloudPalette.colors as Palette) }); }, [cloudPalette]);
   useEffect(() => { savePalette(palette); if (cloudReady) void setCloudPalette({ colors: palette }); }, [palette, cloudReady, setCloudPalette]);
-  useEffect(() => { saveTemplates(templates); if (cloudReady) void replaceTemplates({ templates: templates.map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) }); }, [templates, cloudReady, replaceTemplates]);
+  useEffect(() => { saveTemplates(templates); }, [templates]);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);      const active = events.find(e => e.id === selected) || null;
   const activeDetail = active && pendingDragRef.current?.id === active.id
     ? { ...active, start: pendingDragRef.current.start, end: pendingDragRef.current.end }
@@ -494,6 +504,7 @@ export default function Dashboard() {
   const addTemplate = (ev: Event) => {
     const t: Template = { id: Date.now(), title: ev.title, start: ev.start, end: ev.end, category: ev.category, note: ev.note, color: ev.color };
     setTemplates(list => [...list, t]);
+    void upsertCloudTemplate({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color });
   };
   const applyTemplate = (t: Template) => {
     setEditing({ id: Date.now(), title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, repeat: [], color: t.color });
@@ -780,7 +791,7 @@ export default function Dashboard() {
                           <p className="sketch-title text-sm truncate">{t.title}</p>
                           <p className="sketch-label text-[10px]">{fmtTime(t.start)} — {fmtTime(t.end)} · {t.category}</p>
                         </div>
-                        <button onClick={e => { e.stopPropagation(); setTemplates(list => list.filter(x => x.id !== t.id)); }}
+                        <button onClick={e => { e.stopPropagation(); setTemplates(list => list.filter(x => x.id !== t.id)); void deleteCloudTemplate({ templateId: t.id }); }}
                           className="text-[var(--sketch-muted)] opacity-40 hover:opacity-100"><Trash2 className="size-3" /></button>
                       </motion.button>
                     ))}
