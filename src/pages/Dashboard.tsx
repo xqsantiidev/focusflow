@@ -26,6 +26,10 @@ function fmtTime(t: string) { const [h, m] = t.split(":").map(Number); return `$
 function dur(e: Event) { return toMin(e.end) - toMin(e.start); }
 function keyFor(d: Date) { return `thyme-${d.toISOString().slice(0, 10)}`; }
 function dowKey(d: Date) { return `thyme-dow-${d.getDay()}`; }
+function dayOfYear(date: Date) {
+  const start = new Date(date.getFullYear(), 0, 0);
+  return Math.floor((date.getTime() - start.getTime()) / 86400000);
+}
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 function round15(m: number) { return Math.round(m / 15) * 15; }
 function minToStr(m: number) { const h = Math.floor(m / 60) % 24; const mm = m % 60; return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`; }
@@ -232,7 +236,7 @@ function SketchCircle({
         {/* Location-aware daylight markers: sunrise/sunset are estimated from the saved latitude. */}
         {(() => {
           const latitude = location?.latitude ?? 40;
-          const seasonal = Math.sin(((new Date().getDate() - 80) / 365) * Math.PI * 2);
+          const seasonal = Math.sin(((dayOfYear(new Date()) - 80) / 365) * Math.PI * 2);
           const daylight = 12 + Math.max(-2, Math.min(2, latitude / 45)) * seasonal * 2;
           const sunrise = Math.round((12 - daylight / 2) * 60);
           const sunset = Math.round((12 + daylight / 2) * 60);
