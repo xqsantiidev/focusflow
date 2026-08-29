@@ -4,6 +4,8 @@ import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Repeat, Bookmark, Sun, Moon, Calendar, RefreshCw, Unlink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useNavigate } from "react-router";
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -387,10 +389,27 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
   const gCal = useGoogleCalendar(date);
 
-  useEffect(() => { setEvents(loadEvents(date)); setSelected(null); }, [date]);
-  useEffect(() => { saveEvents(date, events); }, [events, date]);
-  useEffect(() => { savePalette(palette); }, [palette]);
-  useEffect(() => { saveTemplates(templates); }, [templates]);
+  const dayKey = date.toISOString().slice(0, 10);
+  const cloudEvents = useQuery(api.planner.listEvents, { day: dayKey });
+  const cloudTemplates = useQuery(api.planner.listTemplates);
+  const cloudPalette = useQuery(api.planner.getPalette);
+  const replaceDayEvents = useMutation(api.planner.replaceDayEvents);
+  const replaceTemplates = useMutation(api.planner.replaceTemplates);
+  const setCloudPalette = useMutation(api.planner.setPalette);
+  const [cloudReady, setCloudReady] = useState(false);
+
+  useEffect(() => {
+    if (cloudEvents === undefined) return;
+    const next = cloudEvents.map(({ eventId, title, start, end, category, note, repeat, color }) => ({ id: eventId, title, start, end, category, note, repeat, color }));
+    if (cloudReady) setEvents(next.sort((a, b) => toMin(a.start) - toMin(b.start)));
+    else if (cloudEvents.length === 0) void replaceDayEvents({ day: dayKey, events: loadEvents(date).map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) });
+    setCloudReady(true);
+  }, [cloudEvents, cloudReady, date, dayKey, replaceDayEvents]);
+  useEffect(() => { if (cloudReady) { saveEvents(date, events); void replaceDayEvents({ day: dayKey, events: events.map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) }); } }, [events, date, dayKey, cloudReady, replaceDayEvents]);
+  useEffect(() => { if (cloudTemplates && cloudTemplates.length === 0) void replaceTemplates({ templates: loadTemplates().map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) }); else if (cloudTemplates) setTemplates(cloudTemplates.map(({ templateId, title, start, end, category, note, color }) => ({ id: templateId, title, start, end, category, note, color }))); }, [cloudTemplates, replaceTemplates]);
+  useEffect(() => { if (cloudPalette?.colors) setPalette({ ...builtInPalette, ...(cloudPalette.colors as Palette) }); }, [cloudPalette]);
+  useEffect(() => { savePalette(palette); if (cloudReady) void setCloudPalette({ colors: palette }); }, [palette, cloudReady, setCloudPalette]);
+  useEffect(() => { saveTemplates(templates); if (cloudReady) void replaceTemplates({ templates: templates.map(t => ({ templateId: t.id, title: t.title, start: t.start, end: t.end, category: t.category, note: t.note, color: t.color })) }); }, [templates, cloudReady, replaceTemplates]);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);
 
   const active = events.find(e => e.id === selected) || null;
