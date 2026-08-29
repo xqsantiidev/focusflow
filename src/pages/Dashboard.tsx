@@ -918,14 +918,14 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="w-full rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-5"
-        style={{ maxWidth: Math.min(420, catCount * 90 + 80) }}>
+        className="w-full max-w-xl rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-5 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="sketch-title text-xl">category budgets</h2>
           <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
             onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></motion.button>
         </div>
 
+        <div className="mb-4 rounded-xl border border-[var(--sketch-border)] bg-[var(--sketch-bg)]/40 p-3"><p className="sketch-label text-[10px] uppercase tracking-[0.16em] opacity-55">this week</p><p className="sketch-body mt-1 text-[11px] opacity-60">Adjust a target and the liquid level responds instantly.</p></div>
         <CategoryBudgetPreview compact budgets={budgetData} />
 
         {/* Edit targets */}
