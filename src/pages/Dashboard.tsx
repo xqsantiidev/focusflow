@@ -77,11 +77,12 @@ const defaultDay: Event[] = [
 
 /* ── Circle component ──────────────────────────────────────── */
 function SketchCircle({
-  events, selected, onSelect, onEmpty, palette, heatMap, onDragEnd,
+  events, selected, onSelect, onEmpty, palette, heatMap, onDragEnd, locationEnabled, location,
 }: {
   events: Event[]; selected: number | null; onSelect: (id: number) => void;
   onEmpty: (time: string) => void; palette: Palette;
   heatMap: boolean; onDragEnd: (id: number, newStart: string, newEnd: string) => void;
+  locationEnabled: boolean; location: { latitude: number; longitude: number } | null;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const S = 620, C = S / 2, innerR = 120, outerR = 238;
@@ -89,17 +90,6 @@ function SketchCircle({
   const pt = (r: number, a: number) => [C + r * Math.cos(a), C + r * Math.sin(a)];
   const [dragging, setDragging] = useState<{ eventId: number; edge: "start" | "end" } | null>(null);
   const draggingRef = useRef<{ eventId: number; edge: "start" | "end" } | null>(null);
-  const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => {
-    try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; }
-  });
-  useEffect(() => {
-    if (!locationEnabled || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(pos => {
-      const next = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-      setLocation(next); localStorage.setItem("thyme-location", JSON.stringify(next));
-    }, () => undefined, { timeout: 8000 });
-  }, [locationEnabled]);
   const justDraggedRef = useRef(false);
   const pathRefs = useRef<Map<number, SVGPathElement>>(new Map());
   const animAngles = useRef<Map<number, { start: number; end: number }>>(new Map());
@@ -360,7 +350,7 @@ function SketchCircle({
           const a = timeToAngle(nowMins);
           const nowR = innerR + 14;
           const latitude = locationEnabled ? (location?.latitude ?? 40) : 40;
-          const seasonal = Math.sin(((now.getDate() - 80) / 365) * Math.PI * 2);
+          const seasonal = Math.sin(((dayOfYear(now) - 80) / 365) * Math.PI * 2);
           const daylight = 12 + Math.max(-2, Math.min(2, latitude / 45)) * seasonal * 2;
           const sunrise = (12 - daylight / 2) * 60;
           const sunset = (12 + daylight / 2) * 60;
@@ -406,7 +396,18 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => { try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; } });
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const gCal = useGoogleCalendar(date);
+  useEffect(() => {
+    if (!locationEnabled) return;
+    if (!navigator.geolocation) { setLocationEnabled(false); setLocationError("location is not available"); return; }
+    setLocating(true); setLocationError("");
+    navigator.geolocation.getCurrentPosition(pos => {
+      const next = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      setLocation(next); localStorage.setItem("thyme-location", JSON.stringify(next)); setLocating(false);
+    }, () => { setLocating(false); setLocationEnabled(false); localStorage.setItem("thyme-location-enabled", "false"); setLocationError("location permission denied"); }, { timeout: 8000 });
+  }, [locationEnabled]);
 
   const dayKey = date.toISOString().slice(0, 10);
   const cloudEvents = useQuery(api.planner.listEvents, { day: dayKey });
@@ -554,11 +555,13 @@ export default function Dashboard() {
                       <p className="sketch-label text-[11px]">location-based daylight</p>
                       <p className="sketch-body text-[10px] opacity-60">Uses your approximate location to estimate sunrise and sunset on the time wheel.</p>
                     </div>
-                    <button type="button" aria-pressed={locationEnabled} onClick={() => { const next = !locationEnabled; setLocationEnabled(next); localStorage.setItem("thyme-location-enabled", String(next)); }} className={`h-5 w-10 rounded-full relative transition-colors ${locationEnabled ? "bg-[#e5a93d]" : "bg-[var(--sketch-border)]"}`}>
-                      <span className={`absolute top-0.5 size-4 rounded-full bg-white transition-transform ${locationEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                    <button type="button" aria-pressed={locationEnabled} aria-label="Toggle location-based daylight" onClick={() => { const next = !locationEnabled; setLocationError(""); setLocationEnabled(next); localStorage.setItem("thyme-location-enabled", String(next)); }} className={`relative h-7 w-14 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a93d] focus-visible:ring-offset-2 ${locationEnabled ? "bg-[#e5a93d]" : "bg-[var(--sketch-border)]"}`}>
+                      <span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${locationEnabled ? "translate-x-8" : "translate-x-1"}`} />
                     </button>
                   </div>
-                  {location && <button type="button" onClick={() => { setLocation(null); localStorage.removeItem("thyme-location"); }} className="sketch-label mt-2 text-[10px] text-[#e55b5b] hover:underline">clear saved location</button>}
+                  {locating && <p className="sketch-label mt-2 text-[10px] opacity-60">locating...</p>}
+                  {locationError && <p className="sketch-label mt-2 text-[10px] text-[#e55b5b]">{locationError}</p>}
+                  {locationEnabled && location && <button type="button" onClick={() => { setLocation(null); localStorage.removeItem("thyme-location"); }} className="sketch-label mt-2 text-[10px] text-[#e55b5b] hover:underline">clear saved location</button>}
                 </div>
                 <div className="space-y-2 mb-4">
                   {Object.keys(palette).map(cat => (
@@ -691,7 +694,7 @@ export default function Dashboard() {
           className="mt-8">
           <SketchCircle events={events} selected={selected} onSelect={setSelected} palette={palette} heatMap={heatMap}
             onEmpty={time => setEditing({ id: Date.now(), title: "", start: time, end: minToStr(clamp(toMin(time) + 45, 0, 1439)), category: "Study", note: "", repeat: [], color: undefined })}
-            onDragEnd={handleDragEnd} />
+            locationEnabled={locationEnabled} location={location} onDragEnd={handleDragEnd} />
         </motion.div>
 
         {/* Legend */}
