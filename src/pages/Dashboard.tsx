@@ -507,7 +507,7 @@ export default function Dashboard() {
   };
   const updateColor = (cat: string, color: string) => setPalette(p => ({ ...p, [cat]: color }));
   const addCategory = (name: string) => { if (name.trim() && !palette[name.trim()]) { setPalette(p => ({ ...p, [name.trim()]: fallbackColor })); } };
-  const removeCategory = (cat: string) => { if (builtInPalette[cat]) return; setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
+  const removeCategory = (cat: string) => { setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
   const [newCatName, setNewCatName] = useState("");
   return (
     <main className="sketchbook">
@@ -902,15 +902,18 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
     used: Math.round((weekHours[cat] || 0) * 10) / 10,
   }));
 
+  const catCount = Object.keys(palette).length;
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="sketch-title text-2xl">category budgets</h2>
+        className="w-full rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-5"
+        style={{ maxWidth: Math.min(420, catCount * 90 + 80) }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="sketch-title text-xl">category budgets</h2>
           <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
             onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></motion.button>
         </div>
@@ -918,24 +921,25 @@ function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: ()
         <CategoryBudgetPreview compact budgets={budgetData} />
 
         {/* Edit targets */}
-        <div className="mt-5 space-y-2">
-          <p className="sketch-label text-[11px] opacity-60">weekly targets (hrs)</p>
+        <div className="mt-4 space-y-1.5">
+          <p className="sketch-label text-[10px] opacity-50 uppercase tracking-wider">weekly targets</p>
           {budgetData.map(b => (
-            <div key={b.name} className="flex items-center gap-2">
-              <span className="sketch-dot" style={{ backgroundColor: b.color }} />
-              <span className="sketch-label text-[11px] w-16 capitalize">{b.name}</span>
-              <span className="sketch-label text-[11px] opacity-50 w-10 text-right">{b.used.toFixed(1)}h</span>
-              <span className="sketch-label text-[10px] opacity-30">/</span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) - 0.5)} className="sketch-label text-[14px] opacity-50 hover:opacity-100 leading-none px-1">-</button>
-                <span className="sketch-label text-[11px] w-8 text-center font-medium">{budgetTargets[b.name] || 8}h</span>
-                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) + 0.5)} className="sketch-label text-[14px] opacity-50 hover:opacity-100 leading-none px-1">+</button>
+            <div key={b.name} className="flex items-center gap-2 py-0.5">
+              <span className="sketch-dot size-2" style={{ backgroundColor: b.color }} />
+              <span className="sketch-label text-[11px] flex-1 capitalize">{b.name}</span>
+              <span className="sketch-label text-[10px] opacity-40 w-8 text-right">{b.used.toFixed(1)}h</span>
+              <div className="flex items-center gap-0.5">
+                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) - 0.5)}
+                  className="size-5 rounded-md border border-[var(--sketch-border)] flex items-center justify-center text-[11px] opacity-50 hover:opacity-100 hover:border-[var(--sketch-fg)] transition">-</button>
+                <span className="sketch-label text-[10px] w-6 text-center font-medium">{budgetTargets[b.name] || 8}h</span>
+                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] || 8) + 0.5)}
+                  className="size-5 rounded-md border border-[var(--sketch-border)] flex items-center justify-center text-[11px] opacity-50 hover:opacity-100 hover:border-[var(--sketch-fg)] transition">+</button>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="sketch-label mt-5 text-center text-[9px] opacity-45">time poured this week · resets every monday</p>
+        <p className="sketch-label mt-4 text-center text-[9px] opacity-35">resets every monday</p>
       </motion.div>
     </motion.div>
   );
