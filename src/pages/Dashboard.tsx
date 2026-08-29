@@ -684,7 +684,7 @@ export default function Dashboard() {
         {/* Selected detail */}
         <AnimatePresence>
           {active && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="sketch-card mt-6">
+            <motion.div key={`detail-${active.id}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="sketch-card mt-6">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
