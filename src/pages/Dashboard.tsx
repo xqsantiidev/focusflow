@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useNavigate } from "react-router";
-import { CategoryBudgetPreview, Budget } from "@/components/CategoryBudgetPreview";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type Event = { id: number; title: string; start: string; end: string; category: string; note: string; repeat: number[]; color?: string };
@@ -62,10 +61,6 @@ function savePalette(p: Palette) { localStorage.setItem("thyme-palette", JSON.st
 function loadEnergy(date: Date): EnergyLog[] { try { return JSON.parse(localStorage.getItem(`thyme-energy-${date.toISOString().slice(0, 10)}`) || "[]"); } catch { return []; } }
 function saveEnergy(date: Date, logs: EnergyLog[]) { localStorage.setItem(`thyme-energy-${date.toISOString().slice(0, 10)}`, JSON.stringify(logs)); }
 
-/* ── Budget targets persistence ──────────────────────────── */
-const defaultTargets: Record<string, number> = { Study: 8, Health: 5, Life: 6, Class: 12 };
-function loadBudgetTargets(): Record<string, number> { try { return { ...defaultTargets, ...JSON.parse(localStorage.getItem("thyme-budget-targets") || "{}") }; } catch { return { ...defaultTargets }; } }
-function saveBudgetTargets(targets: Record<string, number>) { localStorage.setItem("thyme-budget-targets", JSON.stringify(targets)); }
 
 const defaultDay: Event[] = [
   { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "", repeat: [], color: undefined },
@@ -399,7 +394,6 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showStats, setShowStats] = useState(false);
-  const [showBudgets, setShowBudgets] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => { try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; } });
@@ -524,10 +518,6 @@ export default function Dashboard() {
             <motion.button whileHover={{ scale: 1.08, rotate: 5 }} whileTap={{ scale: 0.9 }}
               onClick={() => setShowStats(true)} className={`sketch-btn-icon size-8 ${heatMap ? "bg-[#e55b5b]/10 border-[#e55b5b]" : ""}`} title="Stats & heat map">
               <svg viewBox="0 0 16 16" className="size-3.5"><rect x="1" y="10" width="3" height="5" rx="0.5" fill="currentColor" opacity=".3" /><rect x="5" y="7" width="3" height="8" rx="0.5" fill="currentColor" opacity=".6" /><rect x="9" y="4" width="3" height="11" rx="0.5" fill="currentColor" opacity=".8" /><rect x="13" y="1" width="3" height="14" rx="0.5" fill="currentColor" /></svg>
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.08, rotate: 5 }} whileTap={{ scale: 0.9 }}
-              onClick={() => setShowBudgets(true)} className="sketch-btn-icon size-8" title="Category budgets">
-              <svg viewBox="0 0 16 16" className="size-3.5"><path d="M4 3h8v2H4zM3 5h10l-1 9H4L3 5z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 7v4M8 7v3M11 7v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity=".6"/></svg>
             </motion.button>
             <motion.button whileHover={{ scale: 1.08, rotate: 180 }} whileTap={{ scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
@@ -806,7 +796,6 @@ export default function Dashboard() {
       {/* Stats overlay */}
       <AnimatePresence>
         {showStats && <StatsView onClose={() => setShowStats(false)} palette={palette} currentDate={date} />}
-        {showBudgets && <BudgetCupsView onClose={() => setShowBudgets(false)} palette={palette} currentDate={date} events={events} />}
       </AnimatePresence>
 
       {/* Delete confirmation */}
@@ -878,78 +867,6 @@ function GoogleClientIdInput() {
   );
 }
 
-
-/* ── Budget Cups View ─────────────────────────────────────── */
-function BudgetCupsView({ onClose, palette, currentDate, events }: { onClose: () => void; palette: Palette; currentDate: Date; events: Event[] }) {
-  const [budgetTargets, setBudgetTargets] = useState<Record<string, number>>(loadBudgetTargets);
-  const updateTarget = (cat: string, val: number) => {
-    setBudgetTargets(prev => { const next = { ...prev, [cat]: Math.max(0.5, val) }; saveBudgetTargets(next); return next; });
-  };
-
-  /* Load full week for weekly totals — use live events prop for today */
-  const weekEvents: Event[] = [];
-  const todayKey = currentDate.toDateString();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
-    if (d.toDateString() === todayKey) {
-      weekEvents.push(...events);
-    } else {
-      weekEvents.push(...loadEvents(d));
-    }
-  }
-  const weekHours: Record<string, number> = {};
-  weekEvents.forEach(e => {
-    const minutes = Math.max(0, toMin(e.end) - toMin(e.start));
-    weekHours[e.category] = (weekHours[e.category] || 0) + minutes / 60;
-  });
-
-  const budgetData: Budget[] = Object.keys(palette).map(cat => ({
-    name: cat,
-    color: palette[cat],
-    target: budgetTargets[cat] ?? 8,
-    used: Math.round((weekHours[cat] || 0) * 10) / 10,
-  }));
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="w-full max-w-xl rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-5 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="sketch-title text-xl">category budgets</h2>
-          <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
-            onClick={onClose} className="sketch-btn-icon size-8"><X className="size-4" /></motion.button>
-        </div>
-
-        <div className="mb-4 rounded-xl border border-[var(--sketch-border)] bg-[var(--sketch-bg)]/40 p-3"><p className="sketch-label text-[10px] uppercase tracking-[0.16em] opacity-55">this week</p><p className="sketch-body mt-1 text-[11px] opacity-60">Adjust a target and the liquid level responds instantly.</p></div>
-        <CategoryBudgetPreview compact budgets={budgetData} />
-
-        {/* Edit targets */}
-        <div className="mt-4 space-y-1.5">
-          <p className="sketch-label text-[10px] opacity-50 uppercase tracking-wider">weekly targets</p>
-          {budgetData.map(b => (
-            <div key={b.name} className="flex items-center gap-2 py-0.5">
-              <span className="sketch-dot size-2" style={{ backgroundColor: b.color }} />
-              <span className="sketch-label text-[11px] flex-1 capitalize">{b.name}</span>
-              <span className="sketch-label text-[10px] opacity-40 w-8 text-right">{b.used.toFixed(1)}h</span>
-              <div className="flex items-center gap-0.5">
-                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] ?? 8) - 0.5)}
-                  className="size-5 rounded-md border border-[var(--sketch-border)] flex items-center justify-center text-[11px] opacity-50 hover:opacity-100 hover:border-[var(--sketch-fg)] transition">-</button>
-                <span className="sketch-label text-[10px] w-6 text-center font-medium">{budgetTargets[b.name] ?? 8}h</span>
-                <button onClick={() => updateTarget(b.name, (budgetTargets[b.name] ?? 8) + 0.5)}
-                  className="size-5 rounded-md border border-[var(--sketch-border)] flex items-center justify-center text-[11px] opacity-50 hover:opacity-100 hover:border-[var(--sketch-fg)] transition">+</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <p className="sketch-label mt-4 text-center text-[9px] opacity-35">resets every monday</p>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 /* ── Stats / Heatmap View ──────────────────────────────────── */
 const STATS_GRAPHS = ["busiest days", "hourly activity", "daily hours", "category ring"] as const;
