@@ -275,11 +275,11 @@ function SketchCircle({
           /* Keep labels in a dedicated outer lane. A deterministic vertical nudge
              prevents neighboring callouts from landing on the hint/legend below. */
           const side = Math.sin(midA) >= 0 ? 1 : -1;
-          const laneNudge = nearbyCount * 18 + (i % 2) * 10;
-          const midR = (outerR + 98) * spread;
+          const laneNudge = nearbyCount * 26 + (i % 2) * 14;
+          const midR = (outerR + 124) * spread;
           const [rawLx, rawLy] = pt(midR, midA);
-          const lx = clamp(rawLx, 34, S - 34);
-          const ly = clamp(rawLy + side * laneNudge, 26, S - 26);
+          const lx = clamp(rawLx, 78, S - 78);
+          const ly = clamp(rawLy + side * laneNudge, 42, S - 42);
           const [ax, ay] = pt(outerR + 14, midA);
           const isSel = selected === ev.id;
           const isDraggingThis = dragging?.eventId === ev.id;
@@ -312,9 +312,9 @@ function SketchCircle({
               {/* Label */}
               <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" strokeLinecap="round" opacity="0.35" shapeRendering="geometricPrecision" />
               {/* Title — SA Long Beach for soft, personal handwriting look */}
-              <text x={lx} y={ly - 8} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="500" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
-              {/* Time — SA Long Beach for consistent look */}
-              <text x={lx} y={ly + 7} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="500" opacity="0.9">{fmtTime(ev.start)} - {fmtTime(ev.end)}</text>
+              <text x={lx} y={ly - 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="600" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
+              {/* Time sits on its own baseline so it never collides with the title. */}
+              <text x={lx} y={ly + 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="600" opacity="0.95">{fmtTime(ev.start)} - {fmtTime(ev.end)}</text>
               <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" shapeRendering="geometricPrecision" />
             </g>
           );
