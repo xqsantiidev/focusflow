@@ -312,10 +312,20 @@ function SketchCircle({
           const isSel = selected === ev.id;
           const isDraggingThis = dragging?.eventId === ev.id;
 
+          /* Only draw gap stroke between adjacent (back-to-back) segments.
+             Overlapping segments share time ranges — no gap needed there. */
+          const hasOverlap = events.some(o => {
+            if (o.id === ev.id) return false;
+            const oS = toMin(o.start), oE = toMin(o.end);
+            return sMin < oE && eMin > oS;
+          });
+          const segStroke = hasOverlap ? "none" : "var(--sketch-bg)";
+          const segStrokeW = hasOverlap ? 0 : 1.5;
+
           return (
             <g key={ev.id}>
               <motion.path ref={getPathRef(ev.id) as (el: any) => void}
-                d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="1.5"
+                d={d} fill={fill} stroke={segStroke} strokeWidth={segStrokeW}
                 shapeRendering="geometricPrecision"
                 initial={false}
                 animate={{ scale: 1, opacity: 1 }}
