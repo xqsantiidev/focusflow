@@ -80,7 +80,7 @@ const defaultDay: Event[] = [
 function SketchCircle({
   events, selected, onSelect, onEmpty, palette, heatMap, onDragEnd, locationEnabled, location,
 }: {
-  events: Event[]; selected: number | null; onSelect: (id: number) => void;
+  events: Event[]; selected: number | null; onSelect: (id: number | null) => void;
   onEmpty: (time: string) => void; palette: Palette;
   heatMap: boolean; onDragEnd: (id: number, newStart: string, newEnd: string) => void;
   locationEnabled: boolean; location: { latitude: number; longitude: number } | null;
@@ -124,6 +124,8 @@ function SketchCircle({
     const [x, y] = svgXY(e);
     const found = getEventAt(x, y);
     if (found) { onSelect(found.id); return; }
+    /* Clicked empty space — dismiss any selected task detail */
+    onSelect(null);
     const r = Math.hypot(x, y);
     if (r < innerR - 10 || r > outerR + 90) return;
     let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2;
@@ -281,17 +283,31 @@ function SketchCircle({
           const midA = (s + e2) / 2;
           /* Spread labels outward based on proximity to other labels */
           const gap = Math.abs(toMin(ev.end) - toMin(ev.start));
-          const nearby = events.filter(o => o.id !== ev.id && Math.abs(toMin(o.start) - toMin(ev.start)) < 90);
-          const nearbyCount = nearby.length;
-          const spread = (gap < 30 ? 1.2 : gap < 60 ? 1.1 : 1.0) + nearbyCount * 0.1;
-          /* Keep labels in a dedicated outer lane. A deterministic vertical nudge
-             prevents neighboring callouts from landing on the hint/legend below. */
-          const side = Math.sin(midA) >= 0 ? 1 : -1;
-          const laneNudge = nearbyCount * 26 + (i % 2) * 14;
-          const midR = (outerR + 124) * spread;
-          const [rawLx, rawLy] = pt(midR, midA);
+          /* ── Angular collision avoidance ── */
+          /* Pre-compute all label angles once; for each event, check overlap
+             with other labels and stagger across radius lanes. */
+          const sortedAngles = events.map(o => ({ id: o.id, angle: timeToAngle((toMin(o.start) + toMin(o.end)) / 2) }));
+          sortedAngles.sort((a, b) => a.angle - b.angle);
+          const midDeg = (midA * 180) / Math.PI;
+          const nearbyLabels = sortedAngles.filter(o => {
+            if (o.id === ev.id) return false;
+            const oDeg = (o.angle * 180) / Math.PI;
+            let diff = Math.abs(midDeg - oDeg);
+            if (diff > 180) diff = 360 - diff;
+            return diff < 10;
+          });
+          const laneCount = nearbyLabels.length;
+          /* Hide label entirely for very short segments when crowded */
+          if (gap < 15 && laneCount > 1) return null;
+          /* Pick a radius lane: base + offset for each overlapping neighbor */
+          const laneOffset = laneCount * 22;
+          const baseR = outerR + 50;
+          const midR = baseR + laneOffset;
+          /* Jitter left/right to avoid stacking on the same ray */
+          const jitterAngle = midA + (laneCount * 0.04 - 0.06);
+          const [rawLx, rawLy] = pt(midR, jitterAngle);
           const lx = clamp(rawLx, 78, S - 78);
-          const ly = clamp(rawLy + side * laneNudge, 42, S - 42);
+          const ly = clamp(rawLy, 42, S - 42);
           const [ax, ay] = pt(outerR + 14, midA);
           const isSel = selected === ev.id;
           const isDraggingThis = dragging?.eventId === ev.id;
@@ -322,9 +338,9 @@ function SketchCircle({
               {/* Label */}
               <line x1={ax} y1={ay} x2={lx} y2={ly} stroke="var(--sketch-fg)" strokeWidth="1.5" strokeDasharray="4 4" strokeLinecap="round" opacity="0.35" shapeRendering="geometricPrecision" />
               {/* Title — SA Long Beach for soft, personal handwriting look */}
-              <text x={lx} y={ly - 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="13" fill="var(--sketch-fg)" fontWeight="600" style={{ letterSpacing: '0.02em' }}>{ev.title}</text>
-              {/* Time sits on its own baseline so it never collides with the title. */}
-              <text x={lx} y={ly + 11} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize="11" fill="var(--sketch-fg)" fontWeight="600" opacity="0.95">{fmtTime(minToStr(labelStart))} - {fmtTime(minToStr(labelEnd))}</text>
+              <text x={lx} y={ly - (gap >= 30 ? 11 : 8)} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize={gap >= 60 ? "13" : gap >= 30 ? "11" : "10"} fill="var(--sketch-fg)" fontWeight="600" style={{ letterSpacing: '0.02em' }}>{gap < 30 ? ev.title.split(' ').slice(0, 2).join(' ') : ev.title}</text>
+              {/* Time sits on its own baseline — only show for segments ≥ 20 min */}
+              {gap >= 20 && <text x={lx} y={ly + (gap >= 30 ? 11 : 9)} textAnchor="middle" fontFamily="'SA Long Beach', 'Caveat', cursive" fontSize={gap >= 60 ? "11" : "10"} fill="var(--sketch-fg)" fontWeight="600" opacity="0.95">{fmtTime(minToStr(labelStart))} - {fmtTime(minToStr(labelEnd))}</text>}
               <circle cx={ax} cy={ay} r="4" fill="var(--sketch-bg)" stroke="var(--sketch-fg)" strokeWidth="2" opacity="0.6" shapeRendering="geometricPrecision" />
             </g>
           );
