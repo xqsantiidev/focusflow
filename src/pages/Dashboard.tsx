@@ -422,15 +422,18 @@ export default function Dashboard() {
   const replaceTemplates = useMutation(api.planner.replaceTemplates);
   const setCloudPalette = useMutation(api.planner.setPalette);
   const [cloudReady, setCloudReady] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const currentUser = useQuery(api.users.currentUser);
+  const onboardedMutation = useMutation(api.planner.setOnboarded);
   const pendingDragRef = useRef<{ id: number; start: string; end: string } | null>(null);
 
   useEffect(() => {
     if (cloudEvents === undefined) return;
     const next = cloudEvents.map(({ eventId, title, start, end, category, note, repeat, color }) => ({ id: eventId, title, start, end, category, note, repeat, color }));
     if (cloudReady) setEvents(next.sort((a, b) => toMin(a.start) - toMin(b.start)));
-    else if (cloudEvents.length === 0) void replaceDayEvents({ day: dayKey, events: loadEvents(date).map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) });
+    else if (cloudEvents.length === 0) { const userOnboarded = currentUser?.onboarded; if (userOnboarded === false || (userOnboarded === undefined && currentUser !== null)) { setShowOnboarding(true); } else { void replaceDayEvents({ day: dayKey, events: loadEvents(date).map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) }); } }
     setCloudReady(true);
-  }, [cloudEvents, cloudReady, date, dayKey, replaceDayEvents]);
+  }, [cloudEvents, cloudReady, date, dayKey, replaceDayEvents, currentUser]);
   useEffect(() => { if (cloudReady) saveEvents(date, events); }, [events, date, cloudReady]);
   /* One-time import: seed cloud from localStorage on first load, then cloud is the source of truth. */
   useEffect(() => {
@@ -806,7 +809,22 @@ export default function Dashboard() {
 
       {/* Stats overlay */}
       <AnimatePresence>
-        {showStats && <StatsView onClose={() => setShowStats(false)} palette={palette} currentDate={date} />}
+        {/* Onboarding overlay */}
+<AnimatePresence>
+  {showOnboarding && currentUser && (
+    <OnboardingView onChoose={(chosenEvents) => {
+      const today = new Date();
+      const dk = today.toISOString().slice(0, 10);
+      void replaceDayEvents({ day: dk, events: chosenEvents.map(e => ({ eventId: e.id, day: dk, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) });
+      void onboardedMutation();
+      setEvents(chosenEvents);
+      setShowOnboarding(false);
+      localStorage.setItem("thyme-onboarded", "true");
+    }} />
+  )}
+</AnimatePresence>
+
+{showStats && <StatsView onClose={() => setShowStats(false)} palette={palette} currentDate={date} />}
       </AnimatePresence>
 
       {/* Delete confirmation */}
@@ -878,6 +896,91 @@ function GoogleClientIdInput() {
   );
 }
 
+
+/* ── Onboarding View ────────────────────────────────────── */
+
+type StarterPack = { id: string; name: string; icon: string; desc: string; events: Event[] };
+
+const starterPacks: StarterPack[] = [
+  { id: "student", name: "student", icon: "🎓", desc: "classes, study sessions, and breaks",
+    events: [
+      { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "", repeat: [], color: undefined },
+      { id: 2, title: "Exercise", start: "08:45", end: "09:30", category: "Health", note: "", repeat: [], color: undefined },
+      { id: 3, title: "Government", start: "10:00", end: "11:00", category: "Class", note: "", repeat: [], color: undefined },
+      { id: 4, title: "Chemistry", start: "11:30", end: "12:30", category: "Class", note: "", repeat: [], color: undefined },
+      { id: 5, title: "Communication Arts", start: "12:45", end: "13:45", category: "Class", note: "", repeat: [], color: undefined },
+      { id: 6, title: "Commute", start: "14:00", end: "14:30", category: "Commute", note: "", repeat: [], color: undefined },
+      { id: 7, title: "Study Session", start: "15:00", end: "16:30", category: "Study", note: "", repeat: [], color: undefined },
+      { id: 8, title: "Free time", start: "17:00", end: "18:30", category: "Free", note: "", repeat: [], color: undefined },
+      { id: 9, title: "Homework", start: "19:00", end: "20:30", category: "Study", note: "", repeat: [], color: undefined },
+      { id: 10, title: "Wind down", start: "21:00", end: "22:00", category: "Free", note: "", repeat: [], color: undefined },
+    ] },
+  { id: "9to5", name: "9-to-5", icon: "💼", desc: "work, meetings, and focus time",
+    events: [
+      { id: 1, title: "Morning routine", start: "06:30", end: "07:30", category: "Life", note: "", repeat: [], color: undefined },
+      { id: 2, title: "Commute", start: "08:00", end: "08:30", category: "Commute", note: "", repeat: [], color: undefined },
+      { id: 3, title: "Deep work", start: "09:00", end: "11:00", category: "Study", note: "", repeat: [], color: undefined },
+      { id: 4, title: "Team standup", start: "11:00", end: "11:30", category: "Life", note: "", repeat: [], color: undefined },
+      { id: 5, title: "Lunch", start: "12:00", end: "13:00", category: "Free", note: "", repeat: [], color: undefined },
+      { id: 6, title: "Meetings", start: "13:30", end: "15:00", category: "Life", note: "", repeat: [], color: undefined },
+      { id: 7, title: "Focus time", start: "15:00", end: "17:00", category: "Study", note: "", repeat: [], color: undefined },
+      { id: 8, title: "Gym", start: "17:30", end: "18:30", category: "Health", note: "", repeat: [], color: undefined },
+      { id: 9, title: "Dinner", start: "19:00", end: "19:45", category: "Free", note: "", repeat: [], color: undefined },
+      { id: 10, title: "Relax", start: "20:00", end: "22:00", category: "Free", note: "", repeat: [], color: undefined },
+    ] },
+  { id: "gym", name: "gym-focused", icon: "🏋️", desc: "training blocks, meals, and recovery",
+    events: [
+      { id: 1, title: "Wake + hydrate", start: "06:00", end: "06:30", category: "Health", note: "", repeat: [], color: undefined },
+      { id: 2, title: "Morning workout", start: "06:30", end: "08:00", category: "Health", note: "", repeat: [], color: undefined },
+      { id: 3, title: "Breakfast + prep", start: "08:15", end: "09:00", category: "Life", note: "", repeat: [], color: undefined },
+      { id: 4, title: "Class / Work", start: "09:30", end: "12:30", category: "Class", note: "", repeat: [], color: undefined },
+      { id: 5, title: "Lunch + rest", start: "12:30", end: "13:30", category: "Free", note: "", repeat: [], color: undefined },
+      { id: 6, title: "Study / Tasks", start: "14:00", end: "16:00", category: "Study", note: "", repeat: [], color: undefined },
+      { id: 7, title: "Afternoon session", start: "16:30", end: "18:00", category: "Health", note: "", repeat: [], color: undefined },
+      { id: 8, title: "Dinner", start: "18:30", end: "19:15", category: "Life", note: "", repeat: [], color: undefined },
+      { id: 9, title: "Stretch + recovery", start: "19:30", end: "20:00", category: "Health", note: "", repeat: [], color: undefined },
+      { id: 10, title: "Wind down", start: "20:30", end: "22:00", category: "Free", note: "", repeat: [], color: undefined },
+    ] },
+  { id: "blank", name: "start blank", icon: "✨", desc: "build your schedule from scratch",
+    events: [] },
+];
+
+function OnboardingView({ onChoose }: { onChoose: (events: Event[]) => void }) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-5 backdrop-blur-sm">
+      <motion.div initial={{ scale: 0.9, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        transition={{ type: "spring", stiffness: 280, damping: 22 }}
+        className="w-full max-w-lg rounded-2xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-bg)] p-8 text-center">
+
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 18 }}
+          className="mx-auto mb-4 text-5xl">🫙</motion.div>
+        <h2 className="sketch-title text-3xl mb-2">welcome to thyme</h2>
+        <p className="font-hand text-sm text-[var(--sketch-muted)] mb-8 max-w-xs mx-auto leading-relaxed">
+          pick a starter template to get going, or start with a blank canvas
+        </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          {starterPacks.map((pack, i) => (
+            <motion.button key={pack.id}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.08, type: "spring", stiffness: 260, damping: 20 }}
+              whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.96 }}
+              onClick={() => onChoose(pack.events.map(e => ({ ...e })))}
+              className="group rounded-xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-4 text-left transition-colors hover:border-[var(--sketch-fg)] hover:bg-[var(--sketch-card)]">
+              <div className="text-2xl mb-2">{pack.icon}</div>
+              <div className="font-hand text-base text-[var(--sketch-fg)] mb-1">{pack.name}</div>
+              <div className="font-hand text-xs text-[var(--sketch-muted)] leading-snug">{pack.desc}</div>
+              <div className="mt-2 font-hand text-[10px] text-[var(--sketch-muted)]">
+                {pack.events.length === 0 ? "empty" : pack.events.length + " blocks"}
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 /* ── Stats / Heatmap View ──────────────────────────────────── */
 const STATS_GRAPHS = ["busiest days", "hourly activity", "daily hours", "category ring"] as const;

@@ -34,7 +34,7 @@ const schema = defineSchema({
   ...authTables,
   users: defineTable({
     name: v.optional(v.string()), image: v.optional(v.string()), email: v.optional(v.string()),
-    emailVerificationTime: v.optional(v.number()), isAnonymous: v.optional(v.boolean()), role: v.optional(roleValidator),
+    emailVerificationTime: v.optional(v.number()), isAnonymous: v.optional(v.boolean()), role: v.optional(roleValidator), onboarded: v.optional(v.boolean()),
   }).index("email", ["email"]),
   events: defineTable(eventFields).index("by_user_day", ["userId", "day"]),
   templates: defineTable(templateFields).index("by_user", ["userId"]),

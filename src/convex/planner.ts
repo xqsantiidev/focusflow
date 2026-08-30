@@ -93,3 +93,15 @@ export const setBudgets = mutation({ args: { targets: v.any() }, handler: async 
   const existing = await ctx.db.query("budgets").withIndex("by_user", q => q.eq("userId", uid)).first();
   if (existing) await ctx.db.patch(existing._id, { targets }); else await ctx.db.insert("budgets", { userId: uid, targets });
 }});
+
+
+export const getOnboarded = query({ args: {}, handler: async ctx => {
+  const uid = await userId(ctx);
+  const user = await ctx.db.get(uid);
+  return user?.onboarded ?? false;
+}});
+
+export const setOnboarded = mutation({ args: {}, handler: async ctx => {
+  const uid = await userId(ctx);
+  await ctx.db.patch(uid, { onboarded: true });
+}});
