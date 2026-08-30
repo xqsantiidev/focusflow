@@ -4,6 +4,7 @@ import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Repeat, Bookmark, Sun, Moon, Calendar, RefreshCw, Unlink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { parseQuickAdd } from "@/lib/parseQuickAdd";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useNavigate } from "react-router";
@@ -449,6 +450,7 @@ export default function Dashboard() {
   const setCloudPalette = useMutation(api.planner.setPalette);
   const [cloudReady, setCloudReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [quickAdd, setQuickAdd] = useState("");
   const currentUser = useQuery(api.users.currentUser);
   const onboardedMutation = useMutation(api.planner.setOnboarded);
   const pendingDragRef = useRef<{ id: number; start: string; end: string } | null>(null);
@@ -520,6 +522,35 @@ export default function Dashboard() {
     }
     setSelected(null);
     setPendingDelete(null);
+  };
+  const handleQuickAdd = () => {
+    const paletteKeys = Object.keys(palette);
+    const parsed = parseQuickAdd(quickAdd, paletteKeys, date);
+    if (!parsed) return;
+    const newEv: Event = {
+      id: Date.now(),
+      title: parsed.title,
+      start: parsed.start,
+      end: parsed.end,
+      category: parsed.category,
+      note: "",
+      repeat: [],
+      color: undefined,
+    };
+    setEvents(list => [...list, newEv].sort((a, b) => toMin(a.start) - toMin(b.start)));
+    void upsertCloudEvent({
+      eventId: newEv.id,
+      day: dayKey,
+      title: newEv.title,
+      start: newEv.start,
+      end: newEv.end,
+      category: newEv.category,
+      note: newEv.note,
+      repeat: [],
+      color: undefined,
+    });
+    setQuickAdd("");
+    setSelected(newEv.id);
   };
   const handleDragEnd = (id: number, newStart: string, newEnd: string) => {
     pendingDragRef.current = { id, start: newStart, end: newEnd };
@@ -728,6 +759,28 @@ export default function Dashboard() {
             );
           })}
         </div>
+
+        {/* Quick-add bar */}
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, type: "spring", stiffness: 300, damping: 22 }}
+          className="mt-5">
+          <form onSubmit={e => { e.preventDefault(); handleQuickAdd(); }} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--sketch-muted)] opacity-40">
+                <Plus className="size-3.5" />
+              </span>
+              <input
+                value={quickAdd}
+                onChange={e => setQuickAdd(e.target.value)}
+                placeholder="gym 6–7pm · chem study 3–4 · lunch 12–1pm"
+                className="w-full rounded-xl border border-[var(--sketch-border)] bg-[var(--sketch-card)] pl-8 pr-3 py-2.5 text-sm font-medium text-[var(--sketch-fg)] placeholder:text-[var(--sketch-muted)] placeholder:opacity-40 focus:outline-none focus:ring-2 focus:ring-[var(--sketch-accent)]/30 transition-all"
+              />
+            </div>
+            <motion.button type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.92 }}
+              className="sketch-btn flex items-center gap-1.5 whitespace-nowrap">
+              add
+            </motion.button>
+          </form>
+        </motion.div>
 
         {/* Circle */}
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 20 }}
