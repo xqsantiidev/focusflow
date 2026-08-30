@@ -72,3 +72,24 @@ export const setPalette = mutation({ args: { colors: v.any() }, handler: async (
   const uid = await userId(ctx); const existing = await ctx.db.query("palette").withIndex("by_user", q => q.eq("userId", uid)).first();
   if (existing) await ctx.db.patch(existing._id, { colors }); else await ctx.db.insert("palette", { userId: uid, colors });
 }});
+
+export const listEventsForWeek = query({
+  args: { startDay: v.string(), endDay: v.string() },
+  handler: async (ctx, { startDay, endDay }) => {
+    const uid = await userId(ctx);
+    return await ctx.db
+      .query("events")
+      .withIndex("by_user_day", q => q.eq("userId", uid).gte("day", startDay).lt("day", endDay))
+      .collect();
+  },
+});
+
+export const getBudgets = query({ args: {}, handler: async ctx => {
+  const uid = await userId(ctx); return await ctx.db.query("budgets").withIndex("by_user", q => q.eq("userId", uid)).first();
+}});
+
+export const setBudgets = mutation({ args: { targets: v.any() }, handler: async (ctx, { targets }) => {
+  const uid = await userId(ctx);
+  const existing = await ctx.db.query("budgets").withIndex("by_user", q => q.eq("userId", uid)).first();
+  if (existing) await ctx.db.patch(existing._id, { targets }); else await ctx.db.insert("budgets", { userId: uid, targets });
+}});

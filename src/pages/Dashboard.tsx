@@ -889,17 +889,27 @@ function StatsView({ onClose, palette, currentDate }: { onClose: () => void; pal
   const prevGraph = () => setGraph(STATS_GRAPHS[(graphIdx - 1 + STATS_GRAPHS.length) % STATS_GRAPHS.length]);
   const nextGraph = () => setGraph(STATS_GRAPHS[(graphIdx + 1) % STATS_GRAPHS.length]);
 
-  /* Load events for the full week */
-  const weekEvents: Event[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
-    weekEvents.push(...loadEvents(d));
-  }
+  /* Compute the week's start (Sunday) and end (next Sunday) as YYYY-MM-DD keys */
+  const weekStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay());
+  const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 7);
+  const weekStartKey = weekStart.toISOString().slice(0, 10);
+  const weekEndKey = weekEnd.toISOString().slice(0, 10);
+
+  /* Cloud: all events for the entire week in one query (single source of truth) */
+  const cloudWeek = useQuery(api.planner.listEventsForWeek, { startDay: weekStartKey, endDay: weekEndKey });
+
+  /* Build weekEvents from cloud when available, else fall back to localStorage */
+  const weekEvents: Event[] = cloudWeek !== undefined
+    ? cloudWeek.map(e => ({ id: e.eventId, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat, color: e.color }))
+    : (() => { const arr: Event[] = []; for (let i = 0; i < 7; i++) { const d = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i); arr.push(...loadEvents(d)); } return arr; })();
 
   /* Daily data (Mon-Sun) */
   const daily = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - currentDate.getDay() + i);
-    const dayEvents = loadEvents(d);
+    const dayKey = d.toISOString().slice(0, 10);
+    const dayEvents = cloudWeek !== undefined
+      ? cloudWeek.filter(e => e.day === dayKey).map(e => ({ id: e.eventId, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat, color: e.color }))
+      : loadEvents(d);
     return {
       day: dayNames[i], date: d.getDate(),
       events: dayEvents.length,

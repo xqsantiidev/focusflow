@@ -39,6 +39,10 @@ const schema = defineSchema({
   events: defineTable(eventFields).index("by_user_day", ["userId", "day"]),
   templates: defineTable(templateFields).index("by_user", ["userId"]),
   palette: defineTable({ userId: v.id("users"), colors: v.any() }).index("by_user", ["userId"]),
+  budgets: defineTable({
+    userId: v.id("users"),
+    targets: v.any(),
+  }).index("by_user", ["userId"]),
 }, { schemaValidation: false });
 
 export default schema;
