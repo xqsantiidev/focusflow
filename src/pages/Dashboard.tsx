@@ -301,21 +301,21 @@ function SketchCircle({
           if (gap < 15 && laneCount > 1) return null;
           /* Pick a radius lane: base + offset for each overlapping neighbor */
           const laneOffset = laneCount * 22;
-          const baseR = outerR + 50;
+          const baseR = outerR + 72;
           const midR = baseR + laneOffset;
           /* Jitter left/right to avoid stacking on the same ray */
           const jitterAngle = midA + (laneCount * 0.04 - 0.06);
           const [rawLx, rawLy] = pt(midR, jitterAngle);
           const lx = clamp(rawLx, 78, S - 78);
           const ly = clamp(rawLy, 42, S - 42);
-          const [ax, ay] = pt(outerR + 14, midA);
+          const [ax, ay] = pt(outerR + 18, midA);
           const isSel = selected === ev.id;
           const isDraggingThis = dragging?.eventId === ev.id;
 
           return (
             <g key={ev.id}>
               <motion.path ref={getPathRef(ev.id) as (el: any) => void}
-                d={d} fill={fill} stroke="none"
+                d={d} fill={fill} stroke="var(--sketch-bg)" strokeWidth="2.5" strokeLinejoin="round"
                 shapeRendering="geometricPrecision"
                 initial={false}
                 animate={{ scale: 1, opacity: 1 }}
