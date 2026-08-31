@@ -78,51 +78,86 @@ export default function Landing() {
               {
                 title: "templates",
                 desc: "save any day as a template and reuse it with one tap.",
-                color: "#4caf50",
+                icon: (
+                  <svg viewBox="0 0 32 32" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="5" width="22" height="22" rx="2" />
+                    <path d="M12 5v22M5 12h22" />
+                    <circle cx="19" cy="19" r="3" fill="currentColor" opacity="0.15" />
+                  </svg>
+                ),
               },
               {
                 title: "repeating",
                 desc: "set blocks to repeat on specific days — schedule once, every week.",
-                color: "#ffc107",
+                icon: (
+                  <svg viewBox="0 0 32 32" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 4l5 5-5 5" />
+                    <path d="M5 14v-2a4 4 0 0 1 4-4h19" />
+                    <path d="M10 28l-5-5 5-5" />
+                    <path d="M27 18v2a4 4 0 0 1-4 4H5" />
+                  </svg>
+                ),
               },
               {
                 title: "palette",
                 desc: "pick your own colors for every category — make the wheel yours.",
-                color: "#e91e63",
+                icon: (
+                  <svg viewBox="0 0 32 32" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 3C8.8 3 3 8.8 3 16s5.8 13 13 13c1.7 0 3-1.3 3-3 0-.8-.3-1.5-.8-2-.5-.5-.8-1.2-.8-2 0-1.7 1.3-3 3-3h3.5c4.1 0 7.5-3.4 7.5-7.5C31.2 8 24.3 3 16 3z" />
+                    <circle cx="11" cy="13" r="2" fill="currentColor" opacity="0.6" />
+                    <circle cx="16" cy="9" r="2" fill="currentColor" opacity="0.8" />
+                    <circle cx="21" cy="13" r="2" fill="currentColor" opacity="0.4" />
+                  </svg>
+                ),
               },
               {
                 title: "stats",
                 desc: "busiest days, hourly activity, category ring — see where your time goes.",
-                color: "#2196f3",
+                icon: (
+                  <svg viewBox="0 0 32 32" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="16" width="6" height="12" rx="1" fill="currentColor" opacity="0.2" />
+                    <rect x="13" y="10" width="6" height="18" rx="1" fill="currentColor" opacity="0.35" />
+                    <rect x="22" y="4" width="6" height="24" rx="1" fill="currentColor" opacity="0.5" />
+                    <path d="M4 28h24" strokeDasharray="2 2" opacity="0.3" />
+                  </svg>
+                ),
               },
               {
                 title: "quick-add",
                 desc: "type \"gym 6–7pm\" and hit enter — no forms, no friction.",
-                color: "#9c27b0",
+                icon: (
+                  <svg viewBox="0 0 32 32" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 6v20M6 16h20" />
+                    <circle cx="16" cy="16" r="12" strokeDasharray="3 4" />
+                    <path d="M26 6l4-4M26 6h-4M26 6v4" strokeWidth="1.2" opacity="0.5" />
+                  </svg>
+                ),
               },
               {
                 title: "dark mode",
                 desc: "one tap to switch — late nights, early mornings, your call.",
-                color: "#607d8b",
+                icon: (
+                  <svg viewBox="0 0 32 32" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M27 17.3A12 12 0 1 1 14.7 5 9 9 0 0 0 27 17.3z" fill="currentColor" opacity="0.15" />
+                    <circle cx="22" cy="8" r="1" fill="currentColor" opacity="0.4" />
+                    <circle cx="26" cy="14" r="0.7" fill="currentColor" opacity="0.3" />
+                  </svg>
+                ),
               },
             ] as const).map((f, i) => (
               <motion.div key={f.title}
-                initial={{ opacity: 0, x: i % 3 === 0 ? -20 : i % 3 === 1 ? 0 : 20, y: i % 3 === 1 ? 15 : 0, scale: 0.95 }}
+                initial={{ opacity: 0, x: i % 3 === 0 ? -24 : i % 3 === 1 ? 0 : 24, y: i % 3 === 1 ? 18 : 0, scale: 0.92 }}
                 whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ delay: i * 0.07, duration: 0.45, type: "spring", stiffness: 180, damping: 20 }}
-                whileHover={{ y: -4, scale: 1.02, transition: { duration: 0.2 } }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ delay: i * 0.05, duration: 0.35, type: "spring", stiffness: 220, damping: 18 }}
+                whileHover={{ y: -5, scale: 1.03, transition: { duration: 0.15, type: "spring", stiffness: 400, damping: 15 } }}
                 className="sketch-card group cursor-default">
-                <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                    style={{ backgroundColor: f.color }}>
-                    {f.title[0]!.toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="sketch-title text-[15px]" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>{f.title}</h3>
-                    <p className="sketch-body text-[11px] mt-0.5 opacity-50 leading-snug" style={{ fontFamily: "'Space Mono', monospace" }}>{f.desc}</p>
-                  </div>
-                </div>
+                <motion.div whileHover={{ rotate: -6, scale: 1.1 }} transition={{ type: "spring", stiffness: 300, damping: 12 }}
+                  className="text-[var(--sketch-muted)] opacity-40 group-hover:opacity-70 transition-opacity w-fit">
+                  {f.icon}
+                </motion.div>
+                <h3 className="mt-2.5" style={{ fontFamily: "'Caveat', cursive", fontSize: "1.15rem", fontWeight: 600, letterSpacing: "-0.01em", color: "var(--sketch-fg)" }}>{f.title}</h3>
+                <p className="sketch-body text-[11px] mt-0.5 opacity-45 leading-snug" style={{ fontFamily: "'Space Mono', monospace" }}>{f.desc}</p>
               </motion.div>
             ))}
           </div>
