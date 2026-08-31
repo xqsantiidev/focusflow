@@ -13,6 +13,7 @@ import "./types/global.d.ts";
 
 // Keep route modules eagerly loaded so the embedded preview never loses a stale dynamic chunk.
 import Landing from "./pages/Landing.tsx";
+import "@fontsource-variable/shantell-sans/full.css";
 import AuthPage from "./pages/Auth.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";

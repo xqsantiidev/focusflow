@@ -521,6 +521,15 @@
   text-wrap: balance;
 }
 
+/* Hand-drawn feature titles — Shantell Sans with bounce axis for a wobbly pen feel */
+.sketch-hand {
+  font-family: 'Shantell Sans Variable', 'Comic Sans MS', cursive;
+  font-weight: 600;
+  font-variation-settings: 'BNCE' 40, 'INFM' 50;
+  letter-spacing: 0;
+  color: var(--sketch-fg);
+}
+
 /* ============================================================
    NOW INDICATOR & extras
    ============================================================ */
