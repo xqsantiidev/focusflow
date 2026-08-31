@@ -73,83 +73,56 @@ export default function Landing() {
           <h2 className="hero-display text-3xl sm:text-4xl text-center">everything you need.</h2>
           <p className="sketch-body text-sm text-center mt-2 opacity-50 max-w-xs mx-auto">more features, less friction. plan faster, see clearer.</p>
 
-          <div className="mt-10 grid grid-cols-2 gap-4">
-            {[
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {([
               {
                 title: "templates",
                 desc: "save any day as a template and reuse it with one tap.",
-                icon: (
-                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <path d="M9 3v18M3 9h18" />
-                  </svg>
-                ),
+                color: "#4caf50",
               },
               {
-                title: "repeating events",
-                desc: "set blocks to repeat on specific days — schedule once, see them every week.",
-                icon: (
-                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 1l4 4-4 4" />
-                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                    <path d="M7 23l-4-4 4-4" />
-                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                  </svg>
-                ),
+                title: "repeating",
+                desc: "set blocks to repeat on specific days — schedule once, every week.",
+                color: "#ffc107",
               },
               {
-                title: "color palette",
-                desc: "pick your own colors for every category — make the wheel truly yours.",
-                icon: (
-                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="8" r="1.5" fill="currentColor" />
-                    <circle cx="8" cy="12" r="1.5" fill="currentColor" />
-                    <circle cx="16" cy="12" r="1.5" fill="currentColor" />
-                    <circle cx="12" cy="16" r="1.5" fill="currentColor" />
-                  </svg>
-                ),
+                title: "palette",
+                desc: "pick your own colors for every category — make the wheel yours.",
+                color: "#e91e63",
               },
               {
-                title: "stats view",
-                desc: "busiest days, hourly activity, daily hours, and a category ring — see where your time goes.",
-                icon: (
-                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="12" width="4" height="9" rx="1" />
-                    <rect x="10" y="7" width="4" height="14" rx="1" />
-                    <rect x="17" y="3" width="4" height="18" rx="1" />
-                  </svg>
-                ),
+                title: "stats",
+                desc: "busiest days, hourly activity, category ring — see where your time goes.",
+                color: "#2196f3",
               },
               {
                 title: "quick-add",
                 desc: "type \"gym 6–7pm\" and hit enter — no forms, no friction.",
-                icon: (
-                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 5v14M5 12h14" />
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                ),
+                color: "#9c27b0",
               },
               {
                 title: "dark mode",
                 desc: "one tap to switch — late nights, early mornings, your call.",
-                icon: (
-                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                  </svg>
-                ),
+                color: "#607d8b",
               },
-            ].map((f, i) => (
-              <motion.div key={f.title} initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                transition={{ delay: i * 0.06, duration: 0.35 }}
-                className="sketch-card group hover:border-[var(--sketch-fg)]/20 transition-colors">
-                <div className="text-[var(--sketch-muted)] opacity-50 group-hover:opacity-80 transition-opacity">
-                  {f.icon}
+            ] as const).map((f, i) => (
+              <motion.div key={f.title}
+                initial={{ opacity: 0, x: i % 3 === 0 ? -20 : i % 3 === 1 ? 0 : 20, y: i % 3 === 1 ? 15 : 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ delay: i * 0.07, duration: 0.45, type: "spring", stiffness: 180, damping: 20 }}
+                whileHover={{ y: -4, scale: 1.02, transition: { duration: 0.2 } }}
+                className="sketch-card group cursor-default">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                    style={{ backgroundColor: f.color }}>
+                    {f.title[0]!.toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="sketch-title text-[15px]" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>{f.title}</h3>
+                    <p className="sketch-body text-[11px] mt-0.5 opacity-50 leading-snug" style={{ fontFamily: "'Space Mono', monospace" }}>{f.desc}</p>
+                  </div>
                 </div>
-                <h3 className="sketch-title text-base mt-3">{f.title}</h3>
-                <p className="sketch-body text-xs mt-1 opacity-50 leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -158,27 +131,36 @@ export default function Landing() {
         {/* FAQ */}
         <div className="mt-24">
           <h2 className="hero-display text-3xl sm:text-4xl text-center">questions?</h2>
-          <div className="mt-8 space-y-4 max-w-md mx-auto">
-            {[
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg sm:max-w-none mx-auto">
+            {([
               {
                 q: "is it free?",
-                a: "yes. thyme is free to use — no subscriptions, no hidden fees, no ads. just your planner.",
+                a: "yes. no subscriptions, no hidden fees, no ads. just your planner.",
+                color: "#4caf50",
               },
               {
                 q: "is my data private?",
-                a: "your schedule lives in your account, visible only to you. we don't sell data, show ads, or track you beyond what the app needs to work.",
+                a: "your schedule lives in your account, visible only to you. we don't sell data.",
+                color: "#2196f3",
               },
               {
                 q: "does it work on mobile?",
-                a: "yes. thyme is designed mobile-first and works great in any browser on your phone or tablet. no app download needed.",
+                a: "yes. designed mobile-first, works in any browser. no app download needed.",
+                color: "#ffc107",
               },
-            ].map((item, i) => (
-              <motion.div key={item.q} initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
+            ] as const).map((item, i) => (
+              <motion.div key={item.q}
+                initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-30px" }}
+                transition={{ delay: i * 0.1, duration: 0.4, type: "spring", stiffness: 200, damping: 22 }}
                 className="sketch-card">
-                <h4 className="sketch-title text-sm">{item.q}</h4>
-                <p className="sketch-body text-xs mt-2 opacity-50 leading-relaxed">{item.a}</p>
+                <div className="size-6 rounded-full mb-3 flex items-center justify-center text-white text-[10px] font-bold"
+                  style={{ backgroundColor: item.color }}>
+                  ?
+                </div>
+                <h4 className="sketch-title text-sm" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>{item.q}</h4>
+                <p className="sketch-body text-[11px] mt-2 opacity-50 leading-relaxed" style={{ fontFamily: "'Space Mono', monospace" }}>{item.a}</p>
               </motion.div>
             ))}
           </div>
