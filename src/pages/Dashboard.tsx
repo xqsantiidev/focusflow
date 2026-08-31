@@ -1,8 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { useGoogleCalendar } from "@/hooks/useGoogleCalendar";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Repeat, Bookmark, Sun, Moon, Calendar, RefreshCw, Unlink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Repeat, Bookmark, Sun, Moon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { parseQuickAdd } from "@/lib/parseQuickAdd";
 import { useMutation, useQuery } from "convex/react";
@@ -426,7 +425,6 @@ export default function Dashboard() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => { try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; } });
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const gCal = useGoogleCalendar(date);
   useEffect(() => {
     if (!locationEnabled) return;
     if (!navigator.geolocation) { setLocationEnabled(false); setLocationError("location is not available"); return; }
@@ -598,13 +596,6 @@ export default function Dashboard() {
             <motion.button whileHover={{ scale: 1.08, rotate: 30 }} whileTap={{ scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
               onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</motion.button>
-            {gCal.isConnected && (
-              <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.9 }}
-                onClick={() => gCal.syncEnabled ? gCal.setSyncEnabled(false) : gCal.setSyncEnabled(true)}
-                className={`sketch-btn-icon size-8 ${gCal.syncEnabled ? "bg-[#4caf50]/10 border-[#4caf50]" : ""}`} title="Google Calendar sync">
-                <Calendar className="size-3.5" />
-              </motion.button>
-            )}
             <motion.button whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}
               onClick={async () => { await signOut(); navigate("/"); }} className="sketch-link flex items-center gap-1.5 text-xs">
               <LogOut className="size-3.5" /> sign out
@@ -646,78 +637,6 @@ export default function Dashboard() {
                 <div className="flex gap-2">
                   <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="new category name" className="sketch-input flex-1" onKeyDown={e => { if (e.key === "Enter" && newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} />
                   <button onClick={() => { if (newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} className="sketch-btn-icon size-9"><Plus className="size-3.5" /></button>
-                </div>
-
-                {/* Google Calendar */}
-                <div className="mt-5 pt-4 border-t border-[var(--sketch-border)]">
-                  <p className="sketch-label text-xs mb-3 flex items-center gap-1.5">
-                    <Calendar className="size-3" /> google calendar
-                  </p>
-                  {!gCal.hasClientId ? (
-                    <GoogleClientIdInput />
-                  ) : !gCal.isConnected ? (
-                    <div>
-                      <p className="sketch-body text-[11px] mb-3 opacity-60">connect your google calendar to sync events in and out of thyme.</p>
-                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                        onClick={gCal.signIn} className="sketch-btn w-full justify-center gap-2">
-                        <Calendar className="size-3.5" /> connect google calendar
-                      </motion.button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="sketch-label text-[11px]">connected</span>
-                        <span className="sketch-label text-[10px] text-[#4caf50]">● live</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="sketch-label text-[11px]">sync enabled</span>
-                        <motion.button whileTap={{ scale: 0.9 }}
-                          onClick={() => gCal.setSyncEnabled(!gCal.syncEnabled)}
-                          className={`w-10 h-5 rounded-full transition-colors relative ${gCal.syncEnabled ? "bg-[#4caf50]" : "bg-[var(--sketch-border)]"}`}>
-                          <motion.div animate={{ x: gCal.syncEnabled ? 20 : 2 }}
-                            className="absolute top-0.5 size-4 rounded-full bg-white shadow" />
-                        </motion.button>
-                      </div>
-                      {gCal.syncEnabled && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                          className="space-y-2">
-                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            onClick={async () => {
-                              const pulled = await gCal.pullEvents(date);
-                              if (pulled.length > 0) {
-                                setEvents(prev => {
-                                  const merged = [...prev];
-                                  pulled.forEach(pe => {
-                                    if (!merged.some(e => e.title === pe.title && e.start === pe.start)) {
-                                      merged.push(pe);
-                                    }
-                                  });
-                                  return merged.sort((a, b) => toMin(a.start) - toMin(b.start));
-                                });
-                              }
-                            }}
-                            className="sketch-btn w-full justify-center gap-2" disabled={gCal.isSyncing}>
-                            <RefreshCw className={`size-3.5 ${gCal.isSyncing ? "animate-spin" : ""}`} />
-                            {gCal.isSyncing ? "syncing..." : "pull from google"}
-                          </motion.button>
-                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            onClick={() => gCal.pushAllEvents(events, date)}
-                            className="sketch-btn w-full justify-center gap-2" disabled={gCal.isSyncing}>
-                            <Calendar className="size-3.5" /> push to google
-                          </motion.button>
-                        </motion.div>
-                      )}
-                      {gCal.lastSyncTime && (
-                        <p className="sketch-label text-[9px] opacity-40">last sync: {gCal.lastSyncTime}</p>
-                      )}
-                      {gCal.error && (
-                        <p className="sketch-label text-[10px] text-[#e55b5b]">{gCal.error}</p>
-                      )}
-                      <button onClick={gCal.signOut} className="sketch-label text-[10px] opacity-40 hover:opacity-100 hover:text-[#e55b5b] flex items-center gap-1">
-                        <Unlink className="size-3" /> disconnect
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </motion.div>
@@ -934,47 +853,6 @@ export default function Dashboard() {
     </main>
   );
 }
-
-/* ── Google Client ID Setup ───────────────────────────────── */
-function GoogleClientIdInput() {
-  const [clientId, setClientId] = useState("");
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = () => {
-    if (clientId.trim().length > 10) {
-      localStorage.setItem("thyme_google_client_id", clientId.trim());
-      setSaved(true);
-      setTimeout(() => window.location.reload(), 600);
-    }
-  };
-
-  return (
-    <div>
-      <p className="sketch-body text-[11px] mb-2 opacity-60">paste your google oauth client id to enable calendar sync.</p>
-      <div className="rounded-lg border border-[var(--sketch-border)] bg-[var(--sketch-hover)] p-3 mb-3">
-        <p className="sketch-label text-[10px] font-medium mb-1">how to get it:</p>
-        <ol className="sketch-body text-[10px] opacity-60 space-y-1 list-decimal pl-3">
-          <li>go to <span className="font-medium">console.cloud.google.com</span></li>
-          <li>create project → enable <span className="font-medium">Google Calendar API</span></li>
-          <li>credentials → create <span className="font-medium">OAuth 2.0 Client ID</span> (Web app)</li>
-          <li>add your app URL to authorized JavaScript origins</li>
-        </ol>
-      </div>
-      {saved ? (
-        <p className="sketch-label text-[11px] text-[#4caf50]">saved! reloading...</p>
-      ) : (
-        <div className="flex gap-2">
-          <Input value={clientId} onChange={e => setClientId(e.target.value)}
-            placeholder="xxxx.apps.googleusercontent.com"
-            className="sketch-input flex-1 text-[11px]" />
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            onClick={handleSave} className="sketch-btn text-[11px]">save</motion.button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 
 /* ── Onboarding View ────────────────────────────────────── */
 
