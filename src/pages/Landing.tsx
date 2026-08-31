@@ -70,10 +70,10 @@ export default function Landing() {
     }
   }, [phase]);
 
-  /* Click-driven advance: ready → c1 → c2 → c3 */
+  /* Click-driven advance: ready → c1 (shatter) → c2 (reassemble) → c3 (sketchbook = the arrow) */
   const advance = () => {
     if (phase === "ready") setPhase("c1");
-    else if (phase === "c1") setPhase("c2");
+    else if (phase === "c1") { setHealed(true); setPhase("c2"); }
     else if (phase === "c2") setPhase("c3");
   };
 
@@ -209,9 +209,28 @@ export default function Landing() {
                   exit={{ opacity: 0, y: -14, scale: 0.94, transition: { duration: 0.28 } }}
                   transition={{ type: "spring", stiffness: 330, damping: 16 }}
                   className="text-center">
-                  <motion.p animate={phase === "ready" ? { scale: [1, 1.07, 1] } : { scale: 1 }}
-                    transition={phase === "ready" ? { repeat: Infinity, duration: 1.4 } : {}}
-                    className="sketch-hand text-2xl">{caption}</motion.p>
+                  {phase === "c3" ? (
+                    /* The final caption IS the arrow — click it to glide down */
+                    <motion.button onClick={e => { e.stopPropagation(); goToDetails(); }}
+                      whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 13 }}
+                      className="sketch-hand text-2xl inline-flex items-center gap-2.5"
+                      aria-label="scroll to the details">
+                      {caption}
+                      <motion.span animate={{ y: [0, 5, 0] }}
+                        transition={{ y: { repeat: Infinity, duration: 1.5, ease: "easeInOut", repeatDelay: 0.35 } }}
+                        className="inline-block text-[var(--sketch-muted)]">
+                        <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12.1 3.6 C11.7 8.2 11.9 13.6 12.2 19.4" />
+                          <path d="M6.4 14.2 C8 16.4 10 18.4 12.3 20.2 C14.2 18.4 16.4 16.3 18.2 13.8" />
+                        </svg>
+                      </motion.span>
+                    </motion.button>
+                  ) : (
+                    <motion.p animate={phase === "ready" ? { scale: [1, 1.07, 1] } : { scale: 1 }}
+                      transition={phase === "ready" ? { repeat: Infinity, duration: 1.4 } : {}}
+                      className="sketch-hand text-2xl">{caption}</motion.p>
+                  )}
                   <svg viewBox="0 0 120 8" className="mx-auto mt-1 w-28" fill="none">
                     <motion.path d="M2 5.5 C38 3.5 82 6.5 118 4" stroke="var(--sketch-fg)" strokeWidth="2.2" strokeLinecap="round"
                       initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
@@ -227,32 +246,11 @@ export default function Landing() {
           </div>
           </div>
 
-          {/* The scroll arrow — appears once the story is told */}
-          <AnimatePresence>
-            {introDone && (
-              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ delay: 0.25, type: "spring", stiffness: 300, damping: 16 }}
-                onClick={e => { e.stopPropagation(); goToDetails(); }}
-                className="mx-auto mt-1 block text-[var(--sketch-muted)] opacity-50 hover:opacity-90 transition-opacity"
-                aria-label="scroll to the details">
-                <motion.span whileHover={{ y: 5 }} whileTap={{ y: 11, scale: 0.9 }}
-                  animate={{ y: [0, 4, 0] }}
-                  transition={{ y: { repeat: Infinity, duration: 1.6, ease: "easeInOut", repeatDelay: 0.4 } }}
-                  className="block">
-                  <svg viewBox="0 0 24 24" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12.1 3.6 C11.7 8.2 11.9 13.6 12.2 19.4" />
-                    <path d="M6.4 14.2 C8 16.4 10 18.4 12.3 20.2 C14.2 18.4 16.4 16.3 18.2 13.8" />
-                  </svg>
-                </motion.span>
-              </motion.button>
-            )}
-          </AnimatePresence>
-
           {/* Skip affordance during the story */}
           <AnimatePresence>
             {!introDone && (
               <motion.button initial={{ opacity: 0 }} animate={{ opacity: 0.55 }} exit={{ opacity: 0 }}
-                onClick={e => { e.stopPropagation(); setPhase("c3"); }}
+                onClick={e => { e.stopPropagation(); setHealed(true); setPhase("c3"); }}
                 className="sketch-link mx-auto mt-2 block text-[11px]">
                 skip →
               </motion.button>
