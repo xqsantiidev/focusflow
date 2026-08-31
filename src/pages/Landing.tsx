@@ -15,41 +15,11 @@ const SEGMENTS: { d: string; fill: string; cx: number; cy: number; dx: number; d
   { d: "M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z", fill: "#ffc107", cx: 132, cy: 187, dx: -0.7, dy: -0.75, rot: 10 },
 ];
 
-const SHARD_SHAPES = [
-  "M 0 0 L 7 -2 L 9 4 L 3 6 Z",
-  "M 0 1 L 6 -3 L 10 2 L 5 7 L 1 5 Z",
-  "M -1 0 L 5 0 L 7 5 L 1 8 L -3 4 Z",
-  "M 0 -1 L 8 1 L 6 6 L -2 5 Z",
-  "M 1 -2 L 7 -1 L 9 5 L 2 4 Z",
-  "M -2 -1 L 4 -3 L 8 2 L 3 7 L -1 3 Z",
-  "M 0 0 L 6 1 L 5 6 L -2 4 Z",
-  "M 1 1 L 8 -1 L 9 4 L 2 6 Z",
-];
-
-type ShardFlight = { key: string; shape: string; fill: string; ox: number; oy: number; tx: number; ty: number; spin: number; delay: number };
-const SHARD_FLIGHTS: ShardFlight[] = SEGMENTS.flatMap((s, i) =>
-  [0, 1, 2, 3].map(k => {
-    const jx = [0.9, -0.6, 0.3, -1][k]!;
-    const jy = [-0.4, 0.8, -0.9, 0.5][k]!;
-    return {
-      key: `${i}-${k}`,
-      shape: SHARD_SHAPES[(i * 3 + k) % SHARD_SHAPES.length]!,
-      fill: s.fill,
-      ox: s.cx + (k - 1.5) * 9,
-      oy: s.cy + (k % 2 === 0 ? -8 : 8),
-      tx: s.cx + (s.dx + jx * 0.45) * 130,
-      ty: s.cy + (s.dy + jy * 0.45) * 130,
-      spin: (k % 2 === 0 ? 1 : -1) * (60 + i * 18),
-      delay: 0.06 + (i + k) * 0.045,
-    };
-  })
-);
-
 const SEG_ASSEMBLED = { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 };
-const SEG_SHATTER = SEGMENTS.map(s => ({
-  scale: [1, 1.14, 0.4], opacity: [1, 1, 0],
-  x: [0, s.dx * 14, s.dx * 64], y: [0, s.dy * 14, s.dy * 64],
-  rotate: [0, -5, s.rot * 2.1],
+const SEG_OUT = SEGMENTS.map(s => ({
+  scale: 0, opacity: 0,
+  x: s.dx * 95, y: s.dy * 95,
+  rotate: s.rot,
 }));
 
 export default function Landing() {
@@ -155,30 +125,14 @@ export default function Landing() {
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={
-                  phase === "drawing" || phase === "ready" || healed ? SEG_ASSEMBLED : SEG_SHATTER[i]!
+                  phase === "drawing" || phase === "ready" || healed ? SEG_ASSEMBLED : SEG_OUT[i]!
                 }
                 transition={
                   phase === "drawing"
                     ? { delay: 0.75 + i * 0.07, type: "spring", stiffness: 280, damping: 16 }
                     : healed
-                      ? { delay: 0.08 + i * 0.045, type: "spring", stiffness: 260, damping: 13 }
-                      : { duration: 0.62, times: [0, 0.2, 1], ease: "easeIn", delay: i * 0.02 }
-                } />
-            ))}
-            {/* Shards — hand-cut glass fragments scattered from each segment */}
-            {SHARD_FLIGHTS.map(f => (
-              <motion.path key={f.key} d={f.shape} fill={f.fill} stroke="#1a1a18" strokeWidth="1"
-                style={{ transformBox: "fill-box", transformOrigin: "center" }}
-                initial={{ opacity: 0, scale: 0, x: f.ox, y: f.oy }}
-                animate={
-                  shattered
-                    ? { opacity: [0, 1, 0.85, 0], scale: [0, 1.05, 0.8, 0.2], x: [f.ox, f.ox + (f.tx - f.ox) * 0.18, f.ox + (f.tx - f.ox) * 0.62, f.tx], y: [f.oy, f.oy + (f.ty - f.oy) * 0.18, f.oy + (f.ty - f.oy) * 0.62, f.ty], rotate: [0, f.spin * 0.35, f.spin * 0.75, f.spin] }
-                    : { opacity: 0 }
-                }
-                transition={
-                  shattered
-                    ? { duration: 1.15, times: [0, 0.12, 0.5, 1], ease: "easeOut", delay: f.delay }
-                    : { duration: 0.3 }
+                      ? { delay: 0.06 + i * 0.04, type: "spring", stiffness: 320, damping: 12 }
+                      : { delay: i * 0.03, type: "spring", stiffness: 340, damping: 14 }
                 } />
             ))}
             {/* Inner circle — draws itself clockwise from the top */}
