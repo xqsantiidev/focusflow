@@ -1,11 +1,52 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Landing() {
   const navigate = useNavigate();
   const showcaseRef = useRef<HTMLDivElement>(null);
+
+  /* ── Intro sequence: draw → burst → done ─────────────────── */
+  type Phase = "drawing" | "bursting" | "done";
+  const prefersReduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [phase, setPhase] = useState<Phase>(prefersReduced ? "done" : "drawing");
+
+  useEffect(() => {
+    if (phase === "drawing") {
+      const t = setTimeout(() => setPhase("bursting"), 1650);
+      return () => clearTimeout(t);
+    }
+    if (phase === "bursting") {
+      const t = setTimeout(() => setPhase("done"), 1150);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
+  /* Lock page scroll until the intro finishes */
+  useEffect(() => {
+    if (phase === "done") {
+      document.body.style.overflow = "";
+      return;
+    }
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, [phase]);
+
+  /* Day-wheel segments with their outward burst direction + spin */
+  const segments: { d: string; fill: string; dx: number; dy: number; rot: number }[] = [
+    { d: "M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z", fill: "#4caf50", dx: 0.4, dy: -1, rot: -16 },
+    { d: "M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z", fill: "#ffc107", dx: 1, dy: -0.45, rot: 13 },
+    { d: "M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z", fill: "#9c27b0", dx: 1, dy: 0.25, rot: -11 },
+    { d: "M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z", fill: "#e91e63", dx: 0.55, dy: 1, rot: 15 },
+    { d: "M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z", fill: "#ffc107", dx: 0.15, dy: 1, rot: -13 },
+    { d: "M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z", fill: "#2196f3", dx: -0.75, dy: 0.75, rot: 12 },
+    { d: "M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z", fill: "#e91e63", dx: -1, dy: 0.05, rot: -14 },
+    { d: "M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z", fill: "#ffc107", dx: -0.7, dy: -0.75, rot: 10 },
+  ];
+  const burstDist = typeof window !== "undefined" ? Math.min(185, window.innerWidth * 0.28) : 185;
+
+  const teaserChips = ["this is your whole day", "tap to add", "your sketchbook"];
   return (
     <main className="sketchbook min-h-screen overflow-hidden">
       <div className="mx-auto max-w-[620px] px-6 pb-24 pt-10">
@@ -31,28 +72,87 @@ export default function Landing() {
           </button>
         </motion.div>
 
-        {/* Sketch circle preview */}
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }} className="mt-16">
-          <svg viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto">
-            {/* Outer dotted guide */}
-            <circle cx="200" cy="200" r="175" fill="none" stroke="#b8b4a8" strokeWidth="1.5" strokeDasharray="3 8" opacity="0.5" />
-            {/* Segments */}
-            <path d="M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z" fill="#4caf50" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z" fill="#ffc107" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z" fill="#9c27b0" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z" fill="#e91e63" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z" fill="#ffc107" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z" fill="#2196f3" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z" fill="#e91e63" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z" fill="#ffc107" stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round" />
-            {/* Inner circle */}
-            <circle cx="200" cy="200" r="70" fill="#faf8f0" stroke="#1a1a18" strokeWidth="2.5" />
-            <text x="200" y="195" textAnchor="middle" className="sketch-title" fontSize="28" fill="#3a3830">5/28</text>
-            <text x="200" y="218" textAnchor="middle" className="sketch-title" fontSize="14" fill="#8a8678">Thursday</text>
+        {/* Sketch circle preview — intro: draws itself, then the day bursts apart */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
+          className="mt-14 select-none">
+          <svg viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto overflow-visible">
+            {/* Outer dotted guide — spins while the wheel "loads" */}
+            <motion.circle cx="200" cy="200" r="175" fill="none" stroke="#b8b4a8" strokeWidth="1.5" strokeDasharray="3 8"
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              initial={{ rotate: 0 }}
+              animate={phase === "drawing" ? { rotate: 160 } : { rotate: 0 }}
+              transition={phase === "drawing" ? { duration: 1.5, ease: "easeOut" } : { duration: 0.6 }}
+              opacity="0.5" />
+            {/* Segments — pop in one by one, burst outward, then boomerang back */}
+            {segments.map((s, i) => (
+              <motion.path key={i} d={s.d} fill={s.fill} stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round"
+                style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={
+                  phase === "drawing"
+                    ? { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 }
+                    : phase === "bursting"
+                      ? { scale: 0.72, opacity: 0.1, x: s.dx * burstDist, y: s.dy * burstDist, rotate: s.rot }
+                      : { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 }
+                }
+                transition={
+                  phase === "drawing"
+                    ? { delay: 0.75 + i * 0.07, type: "spring", stiffness: 280, damping: 16 }
+                    : phase === "bursting"
+                      ? { delay: i * 0.04, type: "spring", stiffness: 300, damping: 12 }
+                      : { delay: 0.05 + i * 0.03, type: "spring", stiffness: 240, damping: 13 }
+                } />
+            ))}
+            {/* Inner circle — draws itself clockwise from the top */}
+            <motion.circle cx="200" cy="200" r="70" fill="#faf8f0" stroke="#1a1a18" strokeWidth="2.5"
+              style={{ transformBox: "fill-box", transformOrigin: "center", rotate: -90 }}
+              initial={{ pathLength: 0, fillOpacity: 0 }}
+              animate={{ pathLength: 1, fillOpacity: 1 }}
+              transition={{ pathLength: { duration: 0.55, delay: 0.4, ease: "easeInOut" }, fillOpacity: { duration: 0.4, delay: 0.8 } }} />
+            <motion.text x="200" y="195" textAnchor="middle" className="sketch-title" fontSize="28" fill="#3a3830"
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: phase === "bursting" ? 0.9 : 1 }}
+              transition={{ delay: 0.95, type: "spring", stiffness: 300, damping: 15 }}>5/28</motion.text>
+            <motion.text x="200" y="218" textAnchor="middle" className="sketch-title" fontSize="14" fill="#8a8678"
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1, duration: 0.3 }}>Thursday</motion.text>
           </svg>
+
+          {/* Teaser chips — pop in while the day is bursting */}
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 min-h-[34px]">
+            <AnimatePresence>
+              {phase === "bursting" && teaserChips.map((chip, i) => (
+                <motion.span key={chip}
+                  initial={{ opacity: 0, y: 14, scale: 0.7, rotate: i % 2 === 0 ? -4 : 4 }}
+                  animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.85, transition: { duration: 0.35 } }}
+                  transition={{ delay: 0.25 + i * 0.14, type: "spring", stiffness: 340, damping: 14 }}
+                  className="sketch-hand text-[13px] inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--sketch-border)] px-3 py-1">
+                  <span className="sketch-dot size-1.5" />
+                  {chip}
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Skip affordance during the intro */}
+          <AnimatePresence>
+            {phase !== "done" && (
+              <motion.button initial={{ opacity: 0 }} animate={{ opacity: 0.55 }} exit={{ opacity: 0 }}
+                onClick={() => setPhase("done")}
+                className="sketch-link mx-auto mt-1 block text-[11px]">
+                skip →
+              </motion.button>
+            )}
+          </AnimatePresence>
         </motion.div>
 
+        {/* Everything below the hero — revealed once the intro finishes */}
+        <div aria-hidden={phase !== "done"}
+          className={`transition-opacity duration-500 ${phase === "done" ? "opacity-100" : "pointer-events-none select-none opacity-0"}`}>
         {/* Features */}
         <div className="mt-16 space-y-4">
           {([
@@ -306,6 +406,7 @@ export default function Landing() {
           </div>
           <span className="sketch-body opacity-30">made with care.</span>
         </footer>
+        </div>
       </div>
     </main>
   );
