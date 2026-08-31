@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
+import { useRef } from "react";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const showcaseRef = useRef<HTMLDivElement>(null);
   return (
     <main className="sketchbook min-h-screen overflow-hidden">
       <div className="mx-auto max-w-[620px] px-6 pb-24 pt-10">
@@ -52,26 +54,97 @@ export default function Landing() {
         </motion.div>
 
         {/* Features */}
-        <div className="mt-16 space-y-6">
-          {[
-            { title: "see your whole day", desc: "one colorful circle, every block in place.", color: "#4caf50" },
-            { title: "tap to add", desc: "open space on the ring? just tap it.", color: "#ffc107" },
-            { title: "your sketchbook", desc: "colors, patterns, and a planner that feels like yours.", color: "#e91e63" },
-          ].map(f => (
-            <motion.div key={f.title} initial={{ opacity: 0, x: -10 }}
-              whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              className="sketch-card">
-              <span className="sketch-dot" style={{ backgroundColor: f.color }} />
-              <h3 className="sketch-title text-lg mt-3">{f.title}</h3>
-              <p className="sketch-body text-sm mt-1 opacity-55">{f.desc}</p>
+        <div className="mt-16 space-y-4">
+          {([
+            {
+              title: "see your whole day",
+              desc: "one colorful circle, every block in place.",
+              icon: (
+                <svg viewBox="0 0 32 32" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  {/* hand-drawn day wheel */}
+                  <path d="M16.4 3.9 C22.6 3.6 28.4 8.4 28.6 15.2 C28.8 22 23.2 28.2 16.2 28.5 C9.2 28.8 3.4 23.4 3.2 16.4 C3 9.6 9.8 4.2 16.4 3.9 Z" strokeDasharray="2.6 3.2" opacity="0.55" />
+                  {/* colored-ish arc segments (wobbly) */}
+                  <path d="M16.3 7.6 C19.8 7.3 23.4 9.4 24.8 12.6 C25.6 14.7 25.4 16.6 24.6 18.2 C22.6 15.4 19.4 13 16.1 12.2 Z" fill="currentColor" opacity="0.22" strokeWidth="1" />
+                  <path d="M13.8 25.1 C10.8 23.8 8.3 21.3 7.4 18.2 C7.2 16.8 7.3 15.4 7.8 14.2 C9.8 17.4 12.6 19.9 16 21.4 Z" fill="currentColor" opacity="0.14" strokeWidth="1" />
+                </svg>
+              ),
+            },
+            {
+              title: "tap to add",
+              desc: "open space on the ring? just tap it.",
+              icon: (
+                <svg viewBox="0 0 32 32" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  {/* tap ripples */}
+                  <path d="M4.9 15.8 C4.7 12.2 7.2 8.6 10.8 7.2" strokeDasharray="2.4 2.6" opacity="0.4" />
+                  <path d="M27.2 15.4 C27.6 11.8 25.2 8.2 21.6 6.7" strokeDasharray="2.4 2.6" opacity="0.4" />
+                  {/* wobbly plus */}
+                  <path d="M16.5 10.4 C15.7 13.6 15.8 17.6 16.2 21.2" />
+                  <path d="M10.4 16 C14 15.4 18.6 15.6 22 16.3" />
+                </svg>
+              ),
+            },
+            {
+              title: "your sketchbook",
+              desc: "colors, patterns, and a planner that feels like yours.",
+              icon: (
+                <svg viewBox="0 0 32 32" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                  {/* hand-drawn open book */}
+                  <path d="M16.2 8.4 C13 6.4 9.2 5.6 5.2 6.1 C4.6 11.6 4.7 17.6 5.4 23.6 C9.4 23.2 13.2 24 16.3 26 C19.5 24 23.4 23.1 27.5 23.6 C28.2 17.5 28.3 11.5 27.7 6.2 C23.5 5.7 19.4 6.4 16.2 8.4 Z" />
+                  <path d="M16.1 8.6 C16 14 16.1 20 16.2 25.8" />
+                  {/* scribble lines on left page */}
+                  <path d="M8 11.6 C10.4 11.2 12.6 11.4 14 12" strokeWidth="1.1" opacity="0.5" />
+                  <path d="M8 15 C10.6 14.6 12.8 14.8 14.2 15.3" strokeWidth="1.1" opacity="0.5" />
+                  {/* wobbly sun on right page */}
+                  <path d="M21.6 12.2 C22.8 12 24 12.6 24.4 13.8 C24.8 15 24 16.4 22.8 16.6 C21.6 16.8 20.4 16.2 20 15 C19.6 13.8 20.4 12.5 21.6 12.2 Z" strokeWidth="1.1" opacity="0.5" />
+                </svg>
+              ),
+            },
+          ] as const).map((f, i) => (
+            <motion.div key={f.title}
+              initial={{ opacity: 0, x: i % 2 === 0 ? -26 : 26, rotate: i % 2 === 0 ? -2 : 2 }}
+              whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ delay: i * 0.05, duration: 0.3, type: "spring", stiffness: 360, damping: 15 }}
+              whileHover={{ y: -3, x: i % 2 === 0 ? 2 : -2, transition: { type: "spring", stiffness: 480, damping: 13 } }}
+              className="sketch-card group cursor-default">
+              <motion.div whileHover={{ rotate: -8, scale: 1.14 }} transition={{ type: "spring", stiffness: 420, damping: 10 }}
+                className="text-[var(--sketch-muted)] opacity-40 group-hover:opacity-75 transition-opacity w-fit">
+                {f.icon}
+              </motion.div>
+              <h3 className="sketch-hand text-lg mt-2.5">{f.title}</h3>
+              <p className="sketch-body text-[12px] mt-0.5 opacity-50 leading-snug">{f.desc}</p>
+              {i === 2 && (
+                <motion.button
+                  onClick={() => showcaseRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  whileHover={{ y: 4 }}
+                  whileTap={{ y: 10, scale: 0.92 }}
+                  animate={{ y: [0, 4, 0] }}
+                  transition={{ y: { repeat: Infinity, duration: 1.6, ease: "easeInOut", repeatDelay: 0.4 } }}
+                  className="mx-auto mt-4 block text-[var(--sketch-muted)] opacity-45 hover:opacity-90 transition-opacity"
+                  aria-label="scroll to features">
+                  <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    {/* hand-drawn down arrow */}
+                    <path d="M12.1 3.6 C11.7 8.2 11.9 13.6 12.2 19.4" />
+                    <path d="M6.4 14.2 C8 16.4 10 18.4 12.3 20.2 C14.2 18.4 16.4 16.3 18.2 13.8" />
+                  </svg>
+                </motion.button>
+              )}
             </motion.div>
           ))}
         </div>
 
         {/* Feature Showcase */}
-        <div className="mt-20">
-          <h2 className="hero-display text-3xl sm:text-4xl text-center">everything you need.</h2>
-          <p className="sketch-body text-sm text-center mt-2 opacity-50 max-w-xs mx-auto">more features, less friction. plan faster, see clearer.</p>
+        <motion.div ref={showcaseRef} initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ type: "spring", stiffness: 220, damping: 20 }}
+          className="mt-20 scroll-mt-10">
+          <motion.h2 initial={{ y: 14 }} whileInView={{ y: 0 }} viewport={{ once: true }}
+            transition={{ type: "spring", stiffness: 300, damping: 18 }}
+            className="hero-display text-3xl sm:text-4xl text-center">everything you need.</motion.h2>
+          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 0.5 }} viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="sketch-body text-sm text-center mt-2 max-w-xs mx-auto">more features, less friction. plan faster, see clearer.</motion.p>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {([
@@ -175,7 +248,7 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* FAQ */}
         <div className="mt-24">
