@@ -3,50 +3,114 @@ import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+/* ── Intro geometry (module-level so animation targets stay stable) ── */
+const SEGMENTS: { d: string; fill: string; cx: number; cy: number; dx: number; dy: number; rot: number }[] = [
+  { d: "M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z", fill: "#4caf50", cx: 228, cy: 94, dx: 0.4, dy: -1, rot: -16 },
+  { d: "M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z", fill: "#ffc107", cx: 290, cy: 137, dx: 1, dy: -0.45, rot: 13 },
+  { d: "M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z", fill: "#9c27b0", cx: 308, cy: 219, dx: 1, dy: 0.25, rot: -11 },
+  { d: "M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z", fill: "#e91e63", cx: 268, cy: 287, dx: 0.55, dy: 1, rot: 15 },
+  { d: "M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z", fill: "#ffc107", cx: 187, cy: 309, dx: 0.15, dy: 1, rot: -13 },
+  { d: "M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z", fill: "#2196f3", cx: 113, cy: 268, dx: -0.75, dy: 0.75, rot: 12 },
+  { d: "M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z", fill: "#e91e63", cx: 91, cy: 214, dx: -1, dy: 0.05, rot: -14 },
+  { d: "M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z", fill: "#ffc107", cx: 132, cy: 187, dx: -0.7, dy: -0.75, rot: 10 },
+];
+
+const SHARD_SHAPES = [
+  "M 0 0 L 7 -2 L 9 4 L 3 6 Z",
+  "M 0 1 L 6 -3 L 10 2 L 5 7 L 1 5 Z",
+  "M -1 0 L 5 0 L 7 5 L 1 8 L -3 4 Z",
+  "M 0 -1 L 8 1 L 6 6 L -2 5 Z",
+  "M 1 -2 L 7 -1 L 9 5 L 2 4 Z",
+  "M -2 -1 L 4 -3 L 8 2 L 3 7 L -1 3 Z",
+  "M 0 0 L 6 1 L 5 6 L -2 4 Z",
+  "M 1 1 L 8 -1 L 9 4 L 2 6 Z",
+];
+
+type ShardFlight = { key: string; shape: string; fill: string; ox: number; oy: number; tx: number; ty: number; spin: number; delay: number };
+const SHARD_FLIGHTS: ShardFlight[] = SEGMENTS.flatMap((s, i) =>
+  [0, 1, 2, 3].map(k => {
+    const jx = [0.9, -0.6, 0.3, -1][k]!;
+    const jy = [-0.4, 0.8, -0.9, 0.5][k]!;
+    return {
+      key: `${i}-${k}`,
+      shape: SHARD_SHAPES[(i * 3 + k) % SHARD_SHAPES.length]!,
+      fill: s.fill,
+      ox: s.cx + (k - 1.5) * 9,
+      oy: s.cy + (k % 2 === 0 ? -8 : 8),
+      tx: s.cx + (s.dx + jx * 0.45) * 130,
+      ty: s.cy + (s.dy + jy * 0.45) * 130,
+      spin: (k % 2 === 0 ? 1 : -1) * (60 + i * 18),
+      delay: 0.06 + (i + k) * 0.045,
+    };
+  })
+);
+
+const SEG_ASSEMBLED = { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 };
+const SEG_SHATTER = SEGMENTS.map(s => ({
+  scale: [1, 1.14, 0.4], opacity: [1, 1, 0],
+  x: [0, s.dx * 14, s.dx * 64], y: [0, s.dy * 14, s.dy * 64],
+  rotate: [0, -5, s.rot * 2.1],
+}));
+
 export default function Landing() {
   const navigate = useNavigate();
   const showcaseRef = useRef<HTMLDivElement>(null);
 
-  /* ── Intro sequence: draw → burst → done ─────────────────── */
-  type Phase = "drawing" | "bursting" | "done";
+  /* ── Intro sequence: wheel loads → click-driven shatter story ── */
+  type Phase = "drawing" | "ready" | "c1" | "c2" | "c3";
   const prefersReduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const [phase, setPhase] = useState<Phase>(prefersReduced ? "done" : "drawing");
+  const [phase, setPhase] = useState<Phase>(prefersReduced ? "c3" : "drawing");
+  const [healed, setHealed] = useState(prefersReduced); // wheel snaps back together
+  const introDone = phase === "c3";
 
   useEffect(() => {
     if (phase === "drawing") {
-      const t = setTimeout(() => setPhase("bursting"), 1650);
-      return () => clearTimeout(t);
-    }
-    if (phase === "bursting") {
-      const t = setTimeout(() => setPhase("done"), 1150);
+      const t = setTimeout(() => setPhase("ready"), 1700);
       return () => clearTimeout(t);
     }
   }, [phase]);
 
-  /* Lock page scroll until the intro finishes */
+  /* Click-driven advance: ready → c1 → c2 → c3 */
+  const advance = () => {
+    if (phase === "ready") setPhase("c1");
+    else if (phase === "c1") setPhase("c2");
+    else if (phase === "c2") setPhase("c3");
+  };
+
+  /* Heal the wheel + glide down to the details */
+  const goToDetails = () => {
+    setHealed(true);
+    showcaseRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  /* Healing also triggers if the user scrolls on their own */
   useEffect(() => {
-    if (phase === "done") {
+    if (!introDone || healed) return;
+    const heal = () => setHealed(true);
+    window.addEventListener("wheel", heal, { once: true, passive: true });
+    window.addEventListener("touchmove", heal, { once: true, passive: true });
+    return () => {
+      window.removeEventListener("wheel", heal);
+      window.removeEventListener("touchmove", heal);
+    };
+  }, [introDone, healed]);
+
+  /* Lock page scroll until the whole story is told */
+  useEffect(() => {
+    if (introDone) {
       document.body.style.overflow = "";
       return;
     }
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
-  }, [phase]);
+  }, [introDone]);
 
-  /* Day-wheel segments with their outward burst direction + spin */
-  const segments: { d: string; fill: string; dx: number; dy: number; rot: number }[] = [
-    { d: "M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z", fill: "#4caf50", dx: 0.4, dy: -1, rot: -16 },
-    { d: "M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z", fill: "#ffc107", dx: 1, dy: -0.45, rot: 13 },
-    { d: "M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z", fill: "#9c27b0", dx: 1, dy: 0.25, rot: -11 },
-    { d: "M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z", fill: "#e91e63", dx: 0.55, dy: 1, rot: 15 },
-    { d: "M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z", fill: "#ffc107", dx: 0.15, dy: 1, rot: -13 },
-    { d: "M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z", fill: "#2196f3", dx: -0.75, dy: 0.75, rot: 12 },
-    { d: "M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z", fill: "#e91e63", dx: -1, dy: 0.05, rot: -14 },
-    { d: "M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z", fill: "#ffc107", dx: -0.7, dy: -0.75, rot: 10 },
-  ];
-  const burstDist = typeof window !== "undefined" ? Math.min(185, window.innerWidth * 0.28) : 185;
-
-  const teaserChips = ["this is your whole day", "tap to add", "your sketchbook"];
+  const shattered = (phase === "c1" || phase === "c2" || phase === "c3") && !healed;
+  const caption =
+    phase === "ready" ? "tap the wheel" :
+    phase === "c1" ? "this is your whole day" :
+    phase === "c2" ? "tap to add" :
+    phase === "c3" ? "your sketchbook" : null;
   return (
     <main className="sketchbook min-h-screen overflow-hidden">
       <div className="mx-auto max-w-[620px] px-6 pb-24 pt-10">
@@ -72,9 +136,11 @@ export default function Landing() {
           </button>
         </motion.div>
 
-        {/* Sketch circle preview — intro: draws itself, then the day bursts apart */}
+        {/* Sketch circle preview — loads, then a click-driven shatter story */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
           className="mt-14 select-none">
+          <div onClick={phase === "ready" || phase === "c1" || phase === "c2" ? advance : undefined}
+            className={phase === "ready" || phase === "c1" || phase === "c2" ? "cursor-pointer" : "cursor-default"}>
           <svg viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto overflow-visible">
             {/* Outer dotted guide — spins while the wheel "loads" */}
             <motion.circle cx="200" cy="200" r="175" fill="none" stroke="#b8b4a8" strokeWidth="1.5" strokeDasharray="3 8"
@@ -84,23 +150,35 @@ export default function Landing() {
               transition={phase === "drawing" ? { duration: 1.5, ease: "easeOut" } : { duration: 0.6 }}
               opacity="0.5" />
             {/* Segments — pop in one by one, burst outward, then boomerang back */}
-            {segments.map((s, i) => (
+            {SEGMENTS.map((s, i) => (
               <motion.path key={i} d={s.d} fill={s.fill} stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round"
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={
-                  phase === "drawing"
-                    ? { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 }
-                    : phase === "bursting"
-                      ? { scale: 0.72, opacity: 0.1, x: s.dx * burstDist, y: s.dy * burstDist, rotate: s.rot }
-                      : { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 }
+                  phase === "drawing" || phase === "ready" || healed ? SEG_ASSEMBLED : SEG_SHATTER[i]!
                 }
                 transition={
                   phase === "drawing"
                     ? { delay: 0.75 + i * 0.07, type: "spring", stiffness: 280, damping: 16 }
-                    : phase === "bursting"
-                      ? { delay: i * 0.04, type: "spring", stiffness: 300, damping: 12 }
-                      : { delay: 0.05 + i * 0.03, type: "spring", stiffness: 240, damping: 13 }
+                    : healed
+                      ? { delay: 0.08 + i * 0.045, type: "spring", stiffness: 260, damping: 13 }
+                      : { duration: 0.62, times: [0, 0.2, 1], ease: "easeIn", delay: i * 0.02 }
+                } />
+            ))}
+            {/* Shards — hand-cut glass fragments scattered from each segment */}
+            {SHARD_FLIGHTS.map(f => (
+              <motion.path key={f.key} d={f.shape} fill={f.fill} stroke="#1a1a18" strokeWidth="1"
+                style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                initial={{ opacity: 0, scale: 0, x: f.ox, y: f.oy }}
+                animate={
+                  shattered
+                    ? { opacity: [0, 1, 0.85, 0], scale: [0, 1.05, 0.8, 0.2], x: [f.ox, f.ox + (f.tx - f.ox) * 0.18, f.ox + (f.tx - f.ox) * 0.62, f.tx], y: [f.oy, f.oy + (f.ty - f.oy) * 0.18, f.oy + (f.ty - f.oy) * 0.62, f.ty], rotate: [0, f.spin * 0.35, f.spin * 0.75, f.spin] }
+                    : { opacity: 0 }
+                }
+                transition={
+                  shattered
+                    ? { duration: 1.15, times: [0, 0.12, 0.5, 1], ease: "easeOut", delay: f.delay }
+                    : { duration: 0.3 }
                 } />
             ))}
             {/* Inner circle — draws itself clockwise from the top */}
@@ -112,7 +190,7 @@ export default function Landing() {
             <motion.text x="200" y="195" textAnchor="middle" className="sketch-title" fontSize="28" fill="#3a3830"
               style={{ transformBox: "fill-box", transformOrigin: "center" }}
               initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: phase === "bursting" ? 0.9 : 1 }}
+              animate={{ opacity: 1, scale: shattered ? 1.06 : 1 }}
               transition={{ delay: 0.95, type: "spring", stiffness: 300, damping: 15 }}>5/28</motion.text>
             <motion.text x="200" y="218" textAnchor="middle" className="sketch-title" fontSize="14" fill="#8a8678"
               style={{ transformBox: "fill-box", transformOrigin: "center" }}
@@ -121,38 +199,70 @@ export default function Landing() {
               transition={{ delay: 1.1, duration: 0.3 }}>Thursday</motion.text>
           </svg>
 
-          {/* Teaser chips — pop in while the day is bursting */}
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 min-h-[34px]">
-            <AnimatePresence>
-              {phase === "bursting" && teaserChips.map((chip, i) => (
-                <motion.span key={chip}
-                  initial={{ opacity: 0, y: 14, scale: 0.7, rotate: i % 2 === 0 ? -4 : 4 }}
-                  animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.85, transition: { duration: 0.35 } }}
-                  transition={{ delay: 0.25 + i * 0.14, type: "spring", stiffness: 340, damping: 14 }}
-                  className="sketch-hand text-[13px] inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--sketch-border)] px-3 py-1">
-                  <span className="sketch-dot size-1.5" />
-                  {chip}
-                </motion.span>
-              ))}
+          {/* Caption — one big readable line per beat, advanced by clicking */}
+          <div className="mt-3 flex min-h-[96px] flex-col items-center justify-start gap-1">
+            <AnimatePresence mode="wait">
+              {caption && (
+                <motion.div key={caption}
+                  initial={{ opacity: 0, y: 20, scale: 0.92 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -14, scale: 0.94, transition: { duration: 0.28 } }}
+                  transition={{ type: "spring", stiffness: 330, damping: 16 }}
+                  className="text-center">
+                  <motion.p animate={phase === "ready" ? { scale: [1, 1.07, 1] } : { scale: 1 }}
+                    transition={phase === "ready" ? { repeat: Infinity, duration: 1.4 } : {}}
+                    className="sketch-hand text-2xl">{caption}</motion.p>
+                  <svg viewBox="0 0 120 8" className="mx-auto mt-1 w-28" fill="none">
+                    <motion.path d="M2 5.5 C38 3.5 82 6.5 118 4" stroke="var(--sketch-fg)" strokeWidth="2.2" strokeLinecap="round"
+                      initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.3, duration: 0.45, ease: "easeOut" }} />
+                  </svg>
+                </motion.div>
+              )}
             </AnimatePresence>
+            {(phase === "ready" || phase === "c1" || phase === "c2") && (
+              <motion.p animate={{ opacity: [0.4, 0.85, 0.4] }} transition={{ repeat: Infinity, duration: 1.7 }}
+                className="sketch-label text-[10px] mt-1">click to continue →</motion.p>
+            )}
+          </div>
           </div>
 
-          {/* Skip affordance during the intro */}
+          {/* The scroll arrow — appears once the story is told */}
           <AnimatePresence>
-            {phase !== "done" && (
+            {introDone && (
+              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                transition={{ delay: 0.25, type: "spring", stiffness: 300, damping: 16 }}
+                onClick={e => { e.stopPropagation(); goToDetails(); }}
+                className="mx-auto mt-1 block text-[var(--sketch-muted)] opacity-50 hover:opacity-90 transition-opacity"
+                aria-label="scroll to the details">
+                <motion.span whileHover={{ y: 5 }} whileTap={{ y: 11, scale: 0.9 }}
+                  animate={{ y: [0, 4, 0] }}
+                  transition={{ y: { repeat: Infinity, duration: 1.6, ease: "easeInOut", repeatDelay: 0.4 } }}
+                  className="block">
+                  <svg viewBox="0 0 24 24" className="size-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12.1 3.6 C11.7 8.2 11.9 13.6 12.2 19.4" />
+                    <path d="M6.4 14.2 C8 16.4 10 18.4 12.3 20.2 C14.2 18.4 16.4 16.3 18.2 13.8" />
+                  </svg>
+                </motion.span>
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Skip affordance during the story */}
+          <AnimatePresence>
+            {!introDone && (
               <motion.button initial={{ opacity: 0 }} animate={{ opacity: 0.55 }} exit={{ opacity: 0 }}
-                onClick={() => setPhase("done")}
-                className="sketch-link mx-auto mt-1 block text-[11px]">
+                onClick={e => { e.stopPropagation(); setPhase("c3"); }}
+                className="sketch-link mx-auto mt-2 block text-[11px]">
                 skip →
               </motion.button>
             )}
           </AnimatePresence>
         </motion.div>
 
-        {/* Everything below the hero — revealed once the intro finishes */}
-        <div aria-hidden={phase !== "done"}
-          className={`transition-opacity duration-500 ${phase === "done" ? "opacity-100" : "pointer-events-none select-none opacity-0"}`}>
+        {/* Everything below the hero — revealed once the story is told */}
+        <div aria-hidden={!introDone}
+          className={`transition-opacity duration-500 ${introDone ? "opacity-100" : "pointer-events-none select-none opacity-0"}`}>
         {/* Features */}
         <div className="mt-16 space-y-4">
           {([
