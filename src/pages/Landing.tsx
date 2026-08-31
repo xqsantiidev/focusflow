@@ -68,6 +68,122 @@ export default function Landing() {
           ))}
         </div>
 
+        {/* Feature Showcase */}
+        <div className="mt-20">
+          <h2 className="hero-display text-3xl sm:text-4xl text-center">everything you need.</h2>
+          <p className="sketch-body text-sm text-center mt-2 opacity-50 max-w-xs mx-auto">more features, less friction. plan faster, see clearer.</p>
+
+          <div className="mt-10 grid grid-cols-2 gap-4">
+            {[
+              {
+                title: "templates",
+                desc: "save any day as a template and reuse it with one tap.",
+                icon: (
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M9 3v18M3 9h18" />
+                  </svg>
+                ),
+              },
+              {
+                title: "repeating events",
+                desc: "set blocks to repeat on specific days — schedule once, see them every week.",
+                icon: (
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 1l4 4-4 4" />
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                    <path d="M7 23l-4-4 4-4" />
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                  </svg>
+                ),
+              },
+              {
+                title: "color palette",
+                desc: "pick your own colors for every category — make the wheel truly yours.",
+                icon: (
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="8" r="1.5" fill="currentColor" />
+                    <circle cx="8" cy="12" r="1.5" fill="currentColor" />
+                    <circle cx="16" cy="12" r="1.5" fill="currentColor" />
+                    <circle cx="12" cy="16" r="1.5" fill="currentColor" />
+                  </svg>
+                ),
+              },
+              {
+                title: "stats view",
+                desc: "busiest days, hourly activity, daily hours, and a category ring — see where your time goes.",
+                icon: (
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="12" width="4" height="9" rx="1" />
+                    <rect x="10" y="7" width="4" height="14" rx="1" />
+                    <rect x="17" y="3" width="4" height="18" rx="1" />
+                  </svg>
+                ),
+              },
+              {
+                title: "quick-add",
+                desc: "type \"gym 6–7pm\" and hit enter — no forms, no friction.",
+                icon: (
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
+                ),
+              },
+              {
+                title: "dark mode",
+                desc: "one tap to switch — late nights, early mornings, your call.",
+                icon: (
+                  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                ),
+              },
+            ].map((f, i) => (
+              <motion.div key={f.title} initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                transition={{ delay: i * 0.06, duration: 0.35 }}
+                className="sketch-card group hover:border-[var(--sketch-fg)]/20 transition-colors">
+                <div className="text-[var(--sketch-muted)] opacity-50 group-hover:opacity-80 transition-opacity">
+                  {f.icon}
+                </div>
+                <h3 className="sketch-title text-base mt-3">{f.title}</h3>
+                <p className="sketch-body text-xs mt-1 opacity-50 leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="mt-24">
+          <h2 className="hero-display text-3xl sm:text-4xl text-center">questions?</h2>
+          <div className="mt-8 space-y-4 max-w-md mx-auto">
+            {[
+              {
+                q: "is it free?",
+                a: "yes. thyme is free to use — no subscriptions, no hidden fees, no ads. just your planner.",
+              },
+              {
+                q: "is my data private?",
+                a: "your schedule lives in your account, visible only to you. we don't sell data, show ads, or track you beyond what the app needs to work.",
+              },
+              {
+                q: "does it work on mobile?",
+                a: "yes. thyme is designed mobile-first and works great in any browser on your phone or tablet. no app download needed.",
+              },
+            ].map((item, i) => (
+              <motion.div key={item.q} initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className="sketch-card">
+                <h4 className="sketch-title text-sm">{item.q}</h4>
+                <p className="sketch-body text-xs mt-2 opacity-50 leading-relaxed">{item.a}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
         {/* CTA */}
         <div className="mt-20 text-center">
           <p className="sketch-label text-sm opacity-40">start with one day.</p>
@@ -76,6 +192,16 @@ export default function Landing() {
             open thyme
           </button>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-24 pt-8 border-t border-[var(--sketch-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
+          <span className="sketch-title text-sm">thyme<span className="text-[#e55b5b]">.</span></span>
+          <div className="flex items-center gap-5">
+            <button onClick={() => navigate("/privacy")} className="sketch-body opacity-40 hover:opacity-80 transition-opacity">privacy</button>
+            <button onClick={() => navigate("/terms")} className="sketch-body opacity-40 hover:opacity-80 transition-opacity">terms</button>
+          </div>
+          <span className="sketch-body opacity-30">made with care.</span>
+        </footer>
       </div>
     </main>
   );
