@@ -4,15 +4,15 @@ import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 /* ── Intro geometry (module-level so animation targets stay stable) ── */
-const SEGMENTS: { d: string; fill: string; cx: number; cy: number; dx: number; dy: number; rot: number }[] = [
-  { d: "M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z", fill: "#4caf50", cx: 228, cy: 94, dx: 0.4, dy: -1, rot: -16 },
-  { d: "M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z", fill: "#ffc107", cx: 290, cy: 137, dx: 1, dy: -0.45, rot: 13 },
-  { d: "M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z", fill: "#9c27b0", cx: 308, cy: 219, dx: 1, dy: 0.25, rot: -11 },
-  { d: "M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z", fill: "#e91e63", cx: 268, cy: 287, dx: 0.55, dy: 1, rot: 15 },
-  { d: "M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z", fill: "#ffc107", cx: 187, cy: 309, dx: 0.15, dy: 1, rot: -13 },
-  { d: "M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z", fill: "#2196f3", cx: 113, cy: 268, dx: -0.75, dy: 0.75, rot: 12 },
-  { d: "M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z", fill: "#e91e63", cx: 91, cy: 214, dx: -1, dy: 0.05, rot: -14 },
-  { d: "M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z", fill: "#ffc107", cx: 132, cy: 187, dx: -0.7, dy: -0.75, rot: 10 },
+const SEGMENTS: { d: string; fill: string; dx: number; dy: number; rot: number }[] = [
+  { d: "M 200 130 L 200 50 A 150 150 0 0 1 285 75 L 215 140 A 70 70 0 0 0 200 130 Z", fill: "#4caf50", dx: 0.4, dy: -1, rot: -16 },
+  { d: "M 215 140 L 285 75 A 150 150 0 0 1 340 165 L 240 195 A 70 70 0 0 0 215 140 Z", fill: "#ffc107", dx: 1, dy: -0.45, rot: 13 },
+  { d: "M 240 195 L 340 165 A 150 150 0 0 1 330 270 L 235 230 A 70 70 0 0 0 240 195 Z", fill: "#9c27b0", dx: 1, dy: 0.25, rot: -11 },
+  { d: "M 235 230 L 330 270 A 150 150 0 0 1 270 340 L 210 255 A 70 70 0 0 0 235 230 Z", fill: "#e91e63", dx: 0.55, dy: 1, rot: 15 },
+  { d: "M 210 255 L 270 340 A 150 150 0 0 1 150 340 L 170 245 A 70 70 0 0 0 210 255 Z", fill: "#ffc107", dx: 0.15, dy: 1, rot: -13 },
+  { d: "M 170 245 L 150 340 A 150 150 0 0 1 65 250 L 155 195 A 70 70 0 0 0 170 245 Z", fill: "#2196f3", dx: -0.75, dy: 0.75, rot: 12 },
+  { d: "M 155 195 L 65 250 A 150 150 0 0 1 65 130 L 160 170 A 70 70 0 0 0 155 195 Z", fill: "#e91e63", dx: -1, dy: 0.05, rot: -14 },
+  { d: "M 160 170 L 65 130 A 150 150 0 0 1 200 50 L 200 130 A 70 70 0 0 0 160 170 Z", fill: "#ffc107", dx: -0.7, dy: -0.75, rot: 10 },
 ];
 
 const SEG_ASSEMBLED = { scale: 1, opacity: 1, x: 0, y: 0, rotate: 0 };
@@ -29,6 +29,16 @@ const SEG_SPANS = SEGMENTS.map(s => {
     Math.atan2(parseFloat(m[4]) - 200, parseFloat(m[3]) - 200),
     Math.atan2(parseFloat(m[6]) - 200, parseFloat(m[5]) - 200),
   ] as const;
+});
+
+/* True geometric center of each wedge — midpoint of its outer arc at the mid radius.
+   (The old hand-picked cx/cy were wrong for some wedges and placed the tap marker
+   on the neighboring wedge.) */
+const SEG_CENTERS = SEG_SPANS.map(([a, b]) => {
+  let diff = (b - a + Math.PI * 2) % (Math.PI * 2);
+  if (diff > Math.PI) diff -= Math.PI * 2;
+  const mid = a + diff / 2;
+  return { x: 200 + 110 * Math.cos(mid), y: 200 + 110 * Math.sin(mid) };
 });
 
 export default function Landing() {
@@ -187,26 +197,33 @@ export default function Landing() {
                 } />
             ))}
             {/* Tapped-task marker — pulsing ring + a hand-drawn "+" where the block lands */}
-            {picked !== null && (
-              <g key={`tapped-${picked}`}>
-                <motion.circle cx={SEGMENTS[picked]!.cx} cy={SEGMENTS[picked]!.cy} r={24}
-                  fill="none" stroke="#1a1a18" strokeWidth="1.7" strokeDasharray="3 4" opacity="0.75"
-                  style={{ transformBox: "fill-box", transformOrigin: "center" }}
-                  initial={{ scale: 0.7, opacity: 0 }}
-                  animate={{ scale: [1, 1.4, 1], opacity: [0.85, 0.2, 0.85] }}
-                  transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }} />
-                <g transform={`translate(${SEGMENTS[picked]!.cx + SEGMENTS[picked]!.dx * 38}, ${SEGMENTS[picked]!.cy + SEGMENTS[picked]!.dy * 38})`}>
-                  <motion.g
-                    style={{ transformBox: "fill-box", transformOrigin: "center" }}
-                    initial={{ scale: 0, opacity: 0, rotate: -18 }}
-                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 11, delay: 0.12 }}>
-                    <path d="M0 -5.2 C-0.8 -3 -0.6 2.8 0 5.4" stroke="#3a3830" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-                    <path d="M-5.2 0 C-2.6 -0.7 3 -0.5 5.4 0" stroke="#3a3830" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-                  </motion.g>
-                </g>
-              </g>
-            )}
+            {picked !== null &&
+              (() => {
+                const s = SEGMENTS[picked]!;
+                const c = SEG_CENTERS[picked]!;
+                const liftX = s.dx * 26;
+                const liftY = s.dy * 26;
+                return (
+                  <g key={`tapped-${picked}`}>
+                    <motion.circle cx={c.x + liftX} cy={c.y + liftY} r={24}
+                      fill="none" stroke="#1a1a18" strokeWidth="1.7" strokeDasharray="3 4" opacity="0.75"
+                      style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: [1, 1.4, 1], opacity: [0.85, 0.2, 0.85] }}
+                      transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }} />
+                    <g transform={`translate(${c.x + s.dx * 30 + liftX}, ${c.y + s.dy * 30 + liftY})`}>
+                      <motion.g
+                        style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                        initial={{ scale: 0, opacity: 0, rotate: -18 }}
+                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 380, damping: 11, delay: 0.12 }}>
+                        <path d="M0 -5.2 C-0.8 -3 -0.6 2.8 0 5.4" stroke="#3a3830" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                        <path d="M-5.2 0 C-2.6 -0.7 3 -0.5 5.4 0" stroke="#3a3830" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                      </motion.g>
+                    </g>
+                  </g>
+                );
+              })()}
             {/* Inner circle — draws itself clockwise from the top */}
             <motion.circle cx="200" cy="200" r="70" fill="#faf8f0" stroke="#1a1a18" strokeWidth="2.5"
               style={{ transformBox: "fill-box", transformOrigin: "center", rotate: -90 }}
