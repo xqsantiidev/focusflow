@@ -12,28 +12,44 @@ export default function Privacy() {
         </header>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <h1 className="sketch-title text-3xl">privacy policy</h1>
-          <p className="sketch-label text-xs mt-2 opacity-40">last updated august 2026</p>
-          <div className="mt-8 space-y-6 sketch-body text-sm opacity-65 leading-relaxed">
+          <p className="sketch-label text-xs mt-2 opacity-40">last updated september 2026</p>
+          <div className="mt-8 space-y-8 sketch-body text-sm opacity-65 leading-relaxed">
+
             <div>
-              <h3 className="sketch-title text-base mb-2">what we collect</h3>
-              <p>thyme stores your schedule, categories, templates, and preferences in your account. we also collect your email address for sign-in purposes only.</p>
+              <h3 className="sketch-title text-base mb-2">account information</h3>
+              <p>when you sign up, we collect your email address to create and authenticate your account. that's the only personal identifier we store.</p>
             </div>
+
             <div>
-              <h3 className="sketch-title text-base mb-2">how we use it</h3>
-              <p>your data is used solely to power the app. we do not sell, share, or monetize your personal information. we do not run ads or track you across other sites.</p>
+              <h3 className="sketch-title text-base mb-2">schedule data</h3>
+              <p>everything you create in thyme — events, templates, categories, color palettes, and weekly budget targets — is stored securely on our servers and linked to your account. this data powers the app and stays private to you.</p>
             </div>
+
             <div>
-              <h3 className="sketch-title text-base mb-2">data storage</h3>
-              <p>your data is stored securely on our servers and is accessible only through your authenticated account. we use industry-standard encryption in transit.</p>
+              <h3 className="sketch-title text-base mb-2">device location (optional)</h3>
+              <p>if you enable the sunrise/sunset shading feature in settings, thyme will request access to your device's location to calculate daylight hours for your area. this is entirely opt-in. your coordinates are stored locally on your device and are never sent to our servers. you can clear your saved location at any time from the settings panel.</p>
             </div>
+
             <div>
-              <h3 className="sketch-title text-base mb-2">your data, your control</h3>
-              <p>you can delete your account and all associated data at any time. no data is retained after account deletion.</p>
+              <h3 className="sketch-title text-base mb-2">how we use your data</h3>
+              <p>your data is used solely to power thyme. we do not sell, share, or monetize your personal information. we do not run ads, and we do not track you across other sites or services.</p>
             </div>
+
+            <div>
+              <h3 className="sketch-title text-base mb-2">data storage &amp; security</h3>
+              <p>your data is stored on encrypted servers and is accessible only through your authenticated account. we use industry-standard encryption for data in transit (TLS) and at rest.</p>
+            </div>
+
+            <div>
+              <h3 className="sketch-title text-base mb-2">delete your account &amp; data</h3>
+              <p>you can delete your account and all associated data at any time. to do so, visit the settings page in the app and tap <span className="font-medium">delete account</span>. this permanently removes your email, schedule, templates, categories, preferences, and budget targets from our servers. this action cannot be undone.</p>
+            </div>
+
             <div>
               <h3 className="sketch-title text-base mb-2">contact</h3>
-              <p>questions about privacy? reach out anytime — we're happy to clarify anything.</p>
+              <p>questions about this policy or your data? reach out at <span className="font-medium">privacy@thymeapp.com</span> and we'll get back to you promptly.</p>
             </div>
+
           </div>
         </motion.div>
       </div>

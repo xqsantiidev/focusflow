@@ -277,16 +277,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           )}
 
-          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
-            Secured by{" "}
-            <a
-              href="https://freebuff.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary transition-colors"
-            >
-              freebuff.com
-            </a>
+          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg space-y-1">
+            <div>
+              <button onClick={() => navigate("/privacy")} className="underline hover:text-primary transition-colors cursor-pointer">privacy</button>
+              <span className="mx-1.5 opacity-30">·</span>
+              <button onClick={() => navigate("/terms")} className="underline hover:text-primary transition-colors cursor-pointer">terms</button>
+            </div>
+            <div>
+              Secured by{" "}
+              <a
+                href="https://freebuff.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-primary transition-colors"
+              >
+                freebuff.com
+              </a>
+            </div>
           </div>
         </Card>
         </div>
