@@ -25,12 +25,16 @@ const SEG_OUT = SEGMENTS.map(s => ({
 export default function Landing() {
   const navigate = useNavigate();
   const showcaseRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   /* ── Intro sequence: wheel loads → click-driven shatter story ── */
   type Phase = "drawing" | "ready" | "c1" | "c2" | "c3";
   const prefersReduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const [phase, setPhase] = useState<Phase>(prefersReduced ? "c3" : "drawing");
   const [healed, setHealed] = useState(prefersReduced); // wheel snaps back together
+  const [picked, setPicked] = useState<number | null>(null); // task being "tapped" during tap-to-add
+  const pickedRef = useRef<number | null>(null);
   const introDone = phase === "c3";
 
   useEffect(() => {
@@ -40,17 +44,42 @@ export default function Landing() {
     }
   }, [phase]);
 
-  /* Click-driven advance: ready → c1 (shatter) → c2 (reassemble) → c3 (sketchbook = the arrow) */
-  const advance = () => {
+  /* Click-driven advance: ready → c1 (pop out) → c2 (reassemble + tap to add) → c3 (sketchbook = the arrow) */
+  const advance = (e: { clientX: number; clientY: number }) => {
     if (phase === "ready") setPhase("c1");
     else if (phase === "c1") { setHealed(true); setPhase("c2"); }
-    else if (phase === "c2") setPhase("c3");
+    else if (phase === "c2" && pickedRef.current === null) {
+      /* Simulate tapping a real task: pick the segment nearest the tap, mark it with a
+         pulsing ring + a "+" where the new block lands, then move on to the sketchbook beat. */
+      let seg = 0;
+      const svg = svgRef.current;
+      if (svg) {
+        const rect = svg.getBoundingClientRect();
+        if (rect.width > 0) {
+          const px = ((e.clientX - rect.left) / rect.width) * 400;
+          const py = ((e.clientY - rect.top) / rect.height) * 400;
+          let best = 0;
+          let bestDist = Infinity;
+          SEGMENTS.forEach((s, i) => {
+            const a = Math.atan2(s.cy - 200, s.cx - 200);
+            const b = Math.atan2(py - 200, px - 200);
+            let d = Math.abs(a - b);
+            if (d > Math.PI) d = Math.PI * 2 - d;
+            if (d < bestDist) { bestDist = d; best = i; }
+          });
+          seg = best;
+        }
+      }
+      pickedRef.current = seg;
+      setPicked(seg);
+      window.setTimeout(() => setPhase("c3"), 950);
+    }
   };
 
-  /* Heal the wheel + glide down to the details */
+  /* Heal the wheel + glide down to the three feature cards (not past them) */
   const goToDetails = () => {
     setHealed(true);
-    showcaseRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    featuresRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   /* Healing also triggers if the user scrolls on their own */
@@ -111,7 +140,7 @@ export default function Landing() {
           className="mt-14 select-none">
           <div onClick={phase === "ready" || phase === "c1" || phase === "c2" ? advance : undefined}
             className={phase === "ready" || phase === "c1" || phase === "c2" ? "cursor-pointer" : "cursor-default"}>
-          <svg viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto overflow-visible">
+          <svg ref={svgRef} viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto overflow-visible">
             {/* Outer dotted guide — spins while the wheel "loads" */}
             <motion.circle cx="200" cy="200" r="175" fill="none" stroke="#b8b4a8" strokeWidth="1.5" strokeDasharray="3 8"
               style={{ transformBox: "fill-box", transformOrigin: "center" }}
@@ -125,16 +154,43 @@ export default function Landing() {
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={
-                  phase === "drawing" || phase === "ready" || healed ? SEG_ASSEMBLED : SEG_OUT[i]!
+                  picked === i
+                    ? { x: s.dx * 26, y: s.dy * 26, scale: 1.12, opacity: 1, rotate: s.rot * 0.35 }
+                    : phase === "drawing" || phase === "ready" || healed
+                      ? SEG_ASSEMBLED
+                      : SEG_OUT[i]!
                 }
                 transition={
                   phase === "drawing"
                     ? { delay: 0.75 + i * 0.07, type: "spring", stiffness: 280, damping: 16 }
-                    : healed
-                      ? { delay: 0.06 + i * 0.04, type: "spring", stiffness: 320, damping: 12 }
-                      : { delay: i * 0.03, type: "spring", stiffness: 340, damping: 14 }
+                    : picked === i
+                      ? { type: "spring", stiffness: 300, damping: 11 }
+                      : healed
+                        ? { delay: 0.06 + i * 0.04, type: "spring", stiffness: 320, damping: 12 }
+                        : { delay: i * 0.03, type: "spring", stiffness: 340, damping: 14 }
                 } />
             ))}
+            {/* Tapped-task marker — pulsing ring + a hand-drawn "+" where the block lands */}
+            {picked !== null && (
+              <g key={`tapped-${picked}`}>
+                <motion.circle cx={SEGMENTS[picked]!.cx} cy={SEGMENTS[picked]!.cy} r={24}
+                  fill="none" stroke="#1a1a18" strokeWidth="1.7" strokeDasharray="3 4" opacity="0.75"
+                  style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.85, 0.2, 0.85] }}
+                  transition={{ repeat: Infinity, duration: 1.3, ease: "easeInOut" }} />
+                <g transform={`translate(${SEGMENTS[picked]!.cx + SEGMENTS[picked]!.dx * 38}, ${SEGMENTS[picked]!.cy + SEGMENTS[picked]!.dy * 38})`}>
+                  <motion.g
+                    style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                    initial={{ scale: 0, opacity: 0, rotate: -18 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 11, delay: 0.12 }}>
+                    <path d="M0 -5.2 C-0.8 -3 -0.6 2.8 0 5.4" stroke="#3a3830" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                    <path d="M-5.2 0 C-2.6 -0.7 3 -0.5 5.4 0" stroke="#3a3830" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+                  </motion.g>
+                </g>
+              </g>
+            )}
             {/* Inner circle — draws itself clockwise from the top */}
             <motion.circle cx="200" cy="200" r="70" fill="#faf8f0" stroke="#1a1a18" strokeWidth="2.5"
               style={{ transformBox: "fill-box", transformOrigin: "center", rotate: -90 }}
@@ -193,7 +249,7 @@ export default function Landing() {
                 </motion.div>
               )}
             </AnimatePresence>
-            {(phase === "ready" || phase === "c1" || phase === "c2") && (
+            {(phase === "ready" || phase === "c1" || (phase === "c2" && picked === null)) && (
               <motion.p animate={{ opacity: [0.4, 0.85, 0.4] }} transition={{ repeat: Infinity, duration: 1.7 }}
                 className="sketch-label text-[10px] mt-1">click to continue →</motion.p>
             )}
@@ -216,7 +272,7 @@ export default function Landing() {
         <div aria-hidden={!introDone}
           className={`transition-opacity duration-500 ${introDone ? "opacity-100" : "pointer-events-none select-none opacity-0"}`}>
         {/* Features */}
-        <div className="mt-16 space-y-4">
+        <div ref={featuresRef} className="mt-16 space-y-4 scroll-mt-6">
           {([
             {
               title: "see your whole day",
