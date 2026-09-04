@@ -86,18 +86,27 @@ export default function Landing() {
   };
 
   /* Click-driven advance: ready → c1 (pop out) → c2 (reassemble + tap to add) → c3 (sketchbook = the arrow) */
-  const advance = (e: { clientX: number; clientY: number }) => {
+  const advance = (e: { clientX: number; clientY: number }, wedgeIndex?: number) => {
     if (phase === "ready") setPhase("c1");
     else if (phase === "c1") { setHealed(true); setPhase("c2"); }
     else if (phase === "c2" && pickedRef.current === null) {
-      pickedRef.current = segmentAt(e.clientX, e.clientY);
+      pickedRef.current = wedgeIndex ?? segmentAt(e.clientX, e.clientY);
       setPicked(pickedRef.current);
       window.setTimeout(() => setPhase("c3"), 950);
     }
   };
 
-  /* Raw pointerdown on the wrapper — bypasses framer-motion event handling
-     so click/tap always registers on desktop and mobile */
+  /* Direct tap handler for wedge paths during c2 — bypasses the angular
+     hit-test entirely so every wedge, including the big yellow one, is
+     selectable.  attached to each <motion.path> in the segments loop. */
+  const handleWedgeTap = (i: number) => {
+    if (phase !== "c2" || pickedRef.current !== null) return;
+    advance({ clientX: 0, clientY: 0 }, i);
+  };
+
+  /* Raw pointerdown on the wrapper — fires for ready/c1 and for clicks on
+     empty space during c2.  Skips clicks that land on a segment path so
+     the path's own onClick (handleWedgeTap) handles it without conflict. */
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -105,6 +114,7 @@ export default function Landing() {
       const clickPhase = phase;
       if (clickPhase !== "ready" && clickPhase !== "c1" && clickPhase !== "c2") return;
       if (clickPhase === "c2" && pickedRef.current !== null) return;
+      if (clickPhase === "c2" && (e.target as Element)?.tagName === "path") return;
       e.preventDefault();
       advance({ clientX: e.clientX, clientY: e.clientY });
     };
@@ -190,6 +200,7 @@ export default function Landing() {
             {/* Segments — pop in one by one, burst outward, then boomerang back */}
             {SEGMENTS.map((s, i) => (
               <motion.path key={i} d={s.d} fill={s.fill} stroke="#1a1a18"
+                onClick={() => handleWedgeTap(i)}
                 strokeWidth={hovered === i && phase === "c2" && picked === null ? 3.4 : 2}
                 strokeLinejoin="round"
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
