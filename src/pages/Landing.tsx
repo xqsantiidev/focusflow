@@ -22,6 +22,15 @@ const SEG_OUT = SEGMENTS.map(s => ({
   rotate: s.rot,
 }));
 
+/* Angular span of each wedge, derived from its outer arc endpoints — used for hit-testing taps */
+const SEG_SPANS = SEGMENTS.map(s => {
+  const m = s.d.match(/M ([\d.]+) ([\d.]+) L ([\d.]+) ([\d.]+) A 150 150 0 0 1 ([\d.]+) ([\d.]+)/)!;
+  return [
+    Math.atan2(parseFloat(m[4]) - 200, parseFloat(m[3]) - 200),
+    Math.atan2(parseFloat(m[6]) - 200, parseFloat(m[5]) - 200),
+  ] as const;
+});
+
 export default function Landing() {
   const navigate = useNavigate();
   const showcaseRef = useRef<HTMLDivElement>(null);
@@ -35,6 +44,7 @@ export default function Landing() {
   const [healed, setHealed] = useState(prefersReduced); // wheel snaps back together
   const [picked, setPicked] = useState<number | null>(null); // task being "tapped" during tap-to-add
   const pickedRef = useRef<number | null>(null);
+  const [hovered, setHovered] = useState<number | null>(null); // wedge previewed during tap-to-add
   const introDone = phase === "c3";
 
   useEffect(() => {
@@ -44,34 +54,35 @@ export default function Landing() {
     }
   }, [phase]);
 
+  /* Map a pointer position to the wedge under it (by angular span, not center angle) */
+  const segmentAt = (clientX: number, clientY: number): number => {
+    const svg = svgRef.current;
+    if (!svg) return 0;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0) return 0;
+    const px = ((clientX - rect.left) / rect.width) * 400;
+    const py = ((clientY - rect.top) / rect.height) * 400;
+    const clickA = Math.atan2(py - 200, px - 200);
+    let best = 0;
+    let bestDist = Infinity;
+    SEG_SPANS.forEach(([a, b], i) => {
+      let d: number;
+      if (a <= b) d = clickA < a ? a - clickA : clickA > b ? clickA - b : 0;
+      else d = clickA < b ? b - clickA : clickA > a ? clickA - a : 0;
+      if (d < bestDist) { bestDist = d; best = i; }
+    });
+    return best;
+  };
+
   /* Click-driven advance: ready → c1 (pop out) → c2 (reassemble + tap to add) → c3 (sketchbook = the arrow) */
   const advance = (e: { clientX: number; clientY: number }) => {
     if (phase === "ready") setPhase("c1");
     else if (phase === "c1") { setHealed(true); setPhase("c2"); }
     else if (phase === "c2" && pickedRef.current === null) {
-      /* Simulate tapping a real task: pick the segment nearest the tap, mark it with a
+      /* Simulate tapping a real task: pick the wedge actually under the tap, mark it with a
          pulsing ring + a "+" where the new block lands, then move on to the sketchbook beat. */
-      let seg = 0;
-      const svg = svgRef.current;
-      if (svg) {
-        const rect = svg.getBoundingClientRect();
-        if (rect.width > 0) {
-          const px = ((e.clientX - rect.left) / rect.width) * 400;
-          const py = ((e.clientY - rect.top) / rect.height) * 400;
-          let best = 0;
-          let bestDist = Infinity;
-          SEGMENTS.forEach((s, i) => {
-            const a = Math.atan2(s.cy - 200, s.cx - 200);
-            const b = Math.atan2(py - 200, px - 200);
-            let d = Math.abs(a - b);
-            if (d > Math.PI) d = Math.PI * 2 - d;
-            if (d < bestDist) { bestDist = d; best = i; }
-          });
-          seg = best;
-        }
-      }
-      pickedRef.current = seg;
-      setPicked(seg);
+      pickedRef.current = segmentAt(e.clientX, e.clientY);
+      setPicked(pickedRef.current);
       window.setTimeout(() => setPhase("c3"), 950);
     }
   };
@@ -138,7 +149,10 @@ export default function Landing() {
         {/* Sketch circle preview — loads, then a click-driven shatter story */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
           className="mt-14 select-none">
-          <div onClick={phase === "ready" || phase === "c1" || phase === "c2" ? advance : undefined}
+          <div
+            onClick={phase === "ready" || phase === "c1" || phase === "c2" ? advance : undefined}
+            onMouseMove={phase === "c2" && picked === null ? e => setHovered(segmentAt(e.clientX, e.clientY)) : undefined}
+            onMouseLeave={() => setHovered(null)}
             className={phase === "ready" || phase === "c1" || phase === "c2" ? "cursor-pointer" : "cursor-default"}>
           <svg ref={svgRef} viewBox="0 0 400 400" className="w-full max-w-[380px] mx-auto overflow-visible">
             {/* Outer dotted guide — spins while the wheel "loads" */}
@@ -150,14 +164,16 @@ export default function Landing() {
               opacity="0.5" />
             {/* Segments — pop in one by one, burst outward, then boomerang back */}
             {SEGMENTS.map((s, i) => (
-              <motion.path key={i} d={s.d} fill={s.fill} stroke="#1a1a18" strokeWidth="2" strokeLinejoin="round"
+              <motion.path key={i} d={s.d} fill={s.fill} stroke="#1a1a18"
+                strokeWidth={hovered === i && phase === "c2" && picked === null ? 3.4 : 2}
+                strokeLinejoin="round"
                 style={{ transformBox: "fill-box", transformOrigin: "center" }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={
                   picked === i
                     ? { x: s.dx * 26, y: s.dy * 26, scale: 1.12, opacity: 1, rotate: s.rot * 0.35 }
                     : phase === "drawing" || phase === "ready" || healed
-                      ? SEG_ASSEMBLED
+                      ? { ...SEG_ASSEMBLED, scale: hovered === i ? 1.05 : 1 }
                       : SEG_OUT[i]!
                 }
                 transition={
