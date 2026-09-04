@@ -55,6 +55,7 @@ export default function Landing() {
   const [picked, setPicked] = useState<number | null>(null); // task being "tapped" during tap-to-add
   const pickedRef = useRef<number | null>(null);
   const [hovered, setHovered] = useState<number | null>(null); // wedge previewed during tap-to-add
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const introDone = phase === "c3";
 
   useEffect(() => {
@@ -89,13 +90,27 @@ export default function Landing() {
     if (phase === "ready") setPhase("c1");
     else if (phase === "c1") { setHealed(true); setPhase("c2"); }
     else if (phase === "c2" && pickedRef.current === null) {
-      /* Simulate tapping a real task: pick the wedge actually under the tap, mark it with a
-         pulsing ring + a "+" where the new block lands, then move on to the sketchbook beat. */
       pickedRef.current = segmentAt(e.clientX, e.clientY);
       setPicked(pickedRef.current);
       window.setTimeout(() => setPhase("c3"), 950);
     }
   };
+
+  /* Raw pointerdown on the wrapper — bypasses framer-motion event handling
+     so click/tap always registers on desktop and mobile */
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const handler = (e: PointerEvent) => {
+      const clickPhase = phase;
+      if (clickPhase !== "ready" && clickPhase !== "c1" && clickPhase !== "c2") return;
+      if (clickPhase === "c2" && pickedRef.current !== null) return;
+      e.preventDefault();
+      advance({ clientX: e.clientX, clientY: e.clientY });
+    };
+    el.addEventListener("pointerdown", handler, { passive: false });
+    return () => el.removeEventListener("pointerdown", handler);
+  }, [phase]);
 
   /* Heal the wheel + glide down to the three feature cards (not past them) */
   const goToDetails = () => {
@@ -160,7 +175,7 @@ export default function Landing() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}
           className="mt-14 select-none">
           <div
-            onClick={phase === "ready" || phase === "c1" || phase === "c2" ? advance : undefined}
+            ref={wrapperRef}
             onMouseMove={phase === "c2" && picked === null ? e => setHovered(segmentAt(e.clientX, e.clientY)) : undefined}
             onMouseLeave={() => setHovered(null)}
             className={phase === "ready" || phase === "c1" || phase === "c2" ? "cursor-pointer" : "cursor-default"}>
