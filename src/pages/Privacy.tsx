@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 
 export default function Privacy() {
   const navigate = useNavigate();
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <main className="sketchbook min-h-screen">
       <div className="mx-auto max-w-[520px] px-6 pb-24 pt-10">

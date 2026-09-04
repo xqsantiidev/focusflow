@@ -50,13 +50,21 @@ export default function Landing() {
   /* ── Intro sequence: wheel loads → click-driven shatter story ── */
   type Phase = "drawing" | "ready" | "c1" | "c2" | "c3";
   const prefersReduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const [phase, setPhase] = useState<Phase>(prefersReduced ? "c3" : "drawing");
+  const introSeen = typeof window !== "undefined" && localStorage.getItem("thyme-intro-seen") === "1";
+  const [phase, setPhase] = useState<Phase>(prefersReduced || introSeen ? "c3" : "drawing");
   const [healed, setHealed] = useState(prefersReduced); // wheel snaps back together
   const [picked, setPicked] = useState<number | null>(null); // task being "tapped" during tap-to-add
   const pickedRef = useRef<number | null>(null);
   const [hovered, setHovered] = useState<number | null>(null); // wedge previewed during tap-to-add
   const wrapperRef = useRef<HTMLDivElement>(null);
   const introDone = phase === "c3";
+
+  /* Mark intro as seen so returning users skip it */
+  useEffect(() => {
+    if (introDone && typeof window !== "undefined") {
+      localStorage.setItem("thyme-intro-seen", "1");
+    }
+  }, [introDone]);
 
   useEffect(() => {
     if (phase === "drawing") {
