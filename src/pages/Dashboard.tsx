@@ -421,6 +421,10 @@ export default function Dashboard() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Event | null>(null);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountText, setDeleteAccountText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState("");
   const [locationEnabled, setLocationEnabled] = useState(() => localStorage.getItem("thyme-location-enabled") === "true");
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(() => { try { const raw = localStorage.getItem("thyme-location"); return raw ? JSON.parse(raw) : null; } catch { return null; } });
   const [locating, setLocating] = useState(false);
@@ -446,6 +450,7 @@ export default function Dashboard() {
   const deleteCloudTemplate = useMutation(api.planner.deleteTemplate);
   const replaceTemplates = useMutation(api.planner.replaceTemplates);
   const setCloudPalette = useMutation(api.planner.setPalette);
+  const deleteAccount = useMutation(api.account.deleteAccount);
   const [cloudReady, setCloudReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [quickAdd, setQuickAdd] = useState("");
@@ -572,6 +577,21 @@ export default function Dashboard() {
   const addCategory = (name: string) => { if (name.trim() && !palette[name.trim()]) { setPalette(p => ({ ...p, [name.trim()]: fallbackColor })); } };
   const removeCategory = (cat: string) => { setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
   const [newCatName, setNewCatName] = useState("");
+  const confirmDeleteAccount = async () => {
+    if (deleteAccountText.trim().toLowerCase() !== "delete" || deletingAccount) return;
+    setDeletingAccount(true);
+    try {
+      await deleteAccount({});
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith("thyme-") || key.startsWith("thyme_")) localStorage.removeItem(key);
+      }
+      try { await signOut(); } catch { /* session already removed */ }
+      navigate("/");
+    } catch {
+      setDeletingAccount(false);
+      setDeleteAccountError("could not delete your account. please try again.");
+    }
+  };
   return (
     <main className="sketchbook">
       <div className="mx-auto flex min-h-screen max-w-[620px] flex-col px-5 pb-10 pt-6 sm:px-8">
@@ -637,6 +657,13 @@ export default function Dashboard() {
                 <div className="flex gap-2">
                   <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="new category name" className="sketch-input flex-1" onKeyDown={e => { if (e.key === "Enter" && newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} />
                   <button onClick={() => { if (newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} className="sketch-btn-icon size-9"><Plus className="size-3.5" /></button>
+                </div>
+                <div className="mt-4 rounded-lg border border-[#e55b5b]/40 p-3">
+                  <p className="sketch-label text-[11px] text-[#e55b5b]">delete account</p>
+                  <p className="sketch-body mt-1 text-[10px] opacity-60">Permanently removes your account and everything in it — schedule, templates, categories, and budget targets. This cannot be undone.</p>
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} type="button"
+                    onClick={() => { setDeleteAccountText(""); setDeleteAccountError(""); setShowDeleteAccount(true); }}
+                    className="sketch-btn sketch-btn-danger mt-3 text-xs">delete account</motion.button>
                 </div>
               </div>
             </motion.div>
@@ -840,6 +867,35 @@ export default function Dashboard() {
               <div className="mt-5 flex justify-end gap-2">
                 <button onClick={() => setPendingDelete(null)} className="sketch-btn">cancel</button>
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={confirmRemove} className="sketch-btn sketch-btn-danger">delete</motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete account confirmation */}
+      <AnimatePresence>
+        {showDeleteAccount && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]"
+            onClick={e => { if (e.target === e.currentTarget && !deletingAccount) setShowDeleteAccount(false); }}>
+            <motion.div initial={{ opacity: 0, scale: 0.9, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 12 }}
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              role="dialog" aria-modal="true" aria-labelledby="delete-account-title"
+              className="composer w-full max-w-sm">
+              <h2 id="delete-account-title" className="sketch-title text-2xl">delete account?</h2>
+              <p className="sketch-body mt-2 text-sm opacity-65">This permanently deletes your account and all of your data. Type <span className="font-medium">delete</span> to confirm.</p>
+              <Input autoFocus value={deleteAccountText} onChange={e => { setDeleteAccountText(e.target.value); setDeleteAccountError(""); }}
+                placeholder="delete" aria-label="Type delete to confirm" disabled={deletingAccount}
+                onKeyDown={e => { if (e.key === "Enter") void confirmDeleteAccount(); }} className="sketch-input mt-4" />
+              {deleteAccountError && <p className="sketch-label mt-2 text-[10px] text-[#e55b5b]">{deleteAccountError}</p>}
+              <div className="mt-5 flex justify-end gap-2">
+                <button onClick={() => setShowDeleteAccount(false)} disabled={deletingAccount} className="sketch-btn">cancel</button>
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => void confirmDeleteAccount()}
+                  disabled={deleteAccountText.trim().toLowerCase() !== "delete" || deletingAccount}
+                  className="sketch-btn sketch-btn-danger disabled:cursor-not-allowed disabled:opacity-40">
+                  {deletingAccount ? "deleting..." : "delete account"}
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
