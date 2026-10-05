@@ -1,12 +1,14 @@
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Trash2, Repeat, Bookmark, Sun, Moon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Repeat, Bookmark, Sun, Moon } from "lucide-react";
 import { parseQuickAdd } from "@/lib/parseQuickAdd";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useNavigate } from "react-router";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type Event = { id: number; title: string; start: string; end: string; category: string; note: string; repeat: number[]; color?: string };
@@ -410,6 +412,8 @@ function SketchCircle({
 export default function Dashboard() {
   const { signOut } = useAuth(); const navigate = useNavigate();
   const [date, setDate] = useState(() => new Date());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteCode, setDeleteCode] = useState("");
   const [events, setEvents] = useState<Event[]>(() => loadEvents(new Date()));
   const [selected, setSelected] = useState<number | null>(null);
   const [editing, setEditing] = useState<Event | null>(null);
@@ -450,6 +454,7 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [quickAdd, setQuickAdd] = useState("");
   const currentUser = useQuery(api.users.currentUser);
+  const deleteAccountMutation = useMutation(api.users.deleteAccount);
   const onboardedMutation = useMutation(api.planner.setOnboarded);
   const pendingDragRef = useRef<{ id: number; start: string; end: string } | null>(null);
 
@@ -595,10 +600,21 @@ export default function Dashboard() {
             </motion.button>
             <motion.button whileHover={{ scale: 1.08, rotate: 30 }} whileTap={{ scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
-              onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</motion.button>
-            <motion.button whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</motion.button>                <motion.button whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}
               onClick={async () => { await signOut(); navigate("/"); }} className="sketch-link flex items-center gap-1.5 text-xs">
               <LogOut className="size-3.5" /> sign out
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
+              <Trash2 className="size-3.5" /> delete account
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
+              <Trash2 className="size-3.5" /> delete account
+            </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
+              <Trash2 className="size-3.5" /> delete account
             </motion.button>
           </div>
         </motion.header>
