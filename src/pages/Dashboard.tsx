@@ -576,6 +576,30 @@ export default function Dashboard() {
   const updateColor = (cat: string, color: string) => setPalette(p => ({ ...p, [cat]: color }));
   const addCategory = (name: string) => { if (name.trim() && !palette[name.trim()]) { setPalette(p => ({ ...p, [name.trim()]: fallbackColor })); } };
   const removeCategory = (cat: string) => { setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
+  const handleDeleteAccount = async () => {
+    if (deleteCode.trim().toLowerCase() !== "delete") return;
+    try {
+      await deleteAccountMutation({ confirm: "delete" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not delete your account. Please try again.");
+      return;
+    }
+    /* Wipe locally cached schedule data so nothing lingers on this device. */
+    try {
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("thyme-")) keys.push(key);
+      }
+      keys.forEach(key => localStorage.removeItem(key));
+    } catch { /* ignore storage errors */ }
+    /* The auth records are already gone server-side; leave the dashboard
+       before signing out so its queries don't throw while unauthenticated. */
+    toast.success("Your account and all data have been deleted.");
+    navigate("/");
+    try { await signOut(); } catch { /* session already removed */ }
+  };
   const [newCatName, setNewCatName] = useState("");
   return (
     <main className="sketchbook">
@@ -600,25 +624,10 @@ export default function Dashboard() {
             </motion.button>
             <motion.button whileHover={{ scale: 1.08, rotate: 30 }} whileTap={{ scale: 0.9 }}
               transition={{ type: "spring", stiffness: 300, damping: 15 }}
-              onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</motion.button>                <motion.button whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setShowSettings(s => !s)} className="sketch-btn-icon size-8" title="Settings">⚙</motion.button>
+            <motion.button whileHover={{ x: -2 }} whileTap={{ scale: 0.95 }}
               onClick={async () => { await signOut(); navigate("/"); }} className="sketch-link flex items-center gap-1.5 text-xs">
               <LogOut className="size-3.5" /> sign out
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
-              <Trash2 className="size-3.5" /> delete account
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
-              <Trash2 className="size-3.5" /> delete account
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
-              <Trash2 className="size-3.5" /> delete account
-            </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
-              <Trash2 className="size-3.5" /> delete account
             </motion.button>
           </div>
         </motion.header>
@@ -657,6 +666,46 @@ export default function Dashboard() {
                 <div className="flex gap-2">
                   <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="new category name" className="sketch-input flex-1" onKeyDown={e => { if (e.key === "Enter" && newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} />
                   <button onClick={() => { if (newCatName.trim()) { addCategory(newCatName.trim()); setNewCatName(""); } }} className="sketch-btn-icon size-9"><Plus className="size-3.5" /></button>
+                </div>
+
+                {/* Danger zone — delete account */}
+                <div className="mt-5 border-t border-[var(--sketch-border)] pt-4">
+                  {!showDeleteConfirm ? (
+                    <>
+                      <p className="sketch-label text-xs mb-1">delete account</p>
+                      <p className="sketch-body text-[11px] opacity-60 mb-3">Permanently delete your account and all associated data — events, templates, palette, and budgets. This cannot be undone.</p>
+                      <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
+                        onClick={() => { setDeleteCode(""); setShowDeleteConfirm(true); }}
+                        className="sketch-btn sketch-btn-danger flex items-center gap-1.5">
+                        <Trash2 className="size-3.5" /> delete account
+                      </motion.button>
+                    </>
+                  ) : (
+                    <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="rounded-lg border border-[#e55b5b]/50 bg-[#e55b5b]/5 p-3">
+                      <p className="sketch-label text-xs text-[#e55b5b] mb-2">are you sure?</p>
+                      <p className="sketch-body text-[11px] opacity-70 mb-3">This permanently removes your email, schedule, templates, categories, preferences, and budget targets from our servers. This action cannot be undone.</p>
+                      <p className="sketch-label text-[10px] mb-1.5">type <span className="font-bold">delete</span> to confirm</p>
+                      <Input
+                        autoFocus
+                        value={deleteCode}
+                        onChange={e => setDeleteCode(e.target.value)}
+                        placeholder="delete"
+                        className="sketch-input w-full"
+                        onKeyDown={e => { if (e.key === "Enter" && deleteCode.trim().toLowerCase() === "delete") { void handleDeleteAccount(); } }}
+                      />
+                      <div className="mt-3 flex gap-2">
+                        <motion.button whileTap={{ scale: 0.96 }}
+                          onClick={() => { setShowDeleteConfirm(false); setDeleteCode(""); }}
+                          className="sketch-btn">cancel</motion.button>
+                        <motion.button whileTap={{ scale: 0.96 }}
+                          onClick={() => { void handleDeleteAccount(); }}
+                          disabled={deleteCode.trim().toLowerCase() !== "delete"}
+                          className="sketch-btn sketch-btn-danger disabled:cursor-not-allowed disabled:opacity-40">
+                          permanently delete
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </motion.div>
