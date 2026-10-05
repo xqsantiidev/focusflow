@@ -616,6 +616,10 @@ export default function Dashboard() {
               onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
               <Trash2 className="size-3.5" /> delete account
             </motion.button>
+            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDeleteConfirm(true)} className="sketch-link flex items-center gap-1.5 text-xs text-[#e55b5b] hover:underline">
+              <Trash2 className="size-3.5" /> delete account
+            </motion.button>
           </div>
         </motion.header>
 
