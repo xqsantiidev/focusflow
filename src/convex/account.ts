@@ -4,7 +4,7 @@ import { mutation } from "./_generated/server";
 
 /**
  * Permanently delete the signed-in user's account and all of their data:
- * every row in events, templates, palette and budgets, all Convex Auth
+ * every row in events, templates, palette and rateLimits, all Convex Auth
  * records (accounts, sessions, refresh tokens, verification codes, plus the
  * matching PKCE verifiers and OTP rate-limit rows), and finally the user
  * document itself. The client must send confirm: "delete".
@@ -43,11 +43,11 @@ export const deleteAccount = mutation({
       .collect();
     for (const doc of palettes) await ctx.db.delete(doc._id);
 
-    const budgets = await ctx.db
-      .query("budgets")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+    const rateLimits = await ctx.db
+      .query("rateLimits")
+      .withIndex("by_user_session", (q) => q.eq("userId", userId))
       .collect();
-    for (const doc of budgets) await ctx.db.delete(doc._id);
+    for (const doc of rateLimits) await ctx.db.delete(doc._id);
 
     /* ── Convex Auth records ─────────────────────────────────────────
        Refresh tokens and verification codes hang off sessions/accounts,

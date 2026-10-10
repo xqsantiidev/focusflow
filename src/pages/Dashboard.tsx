@@ -473,7 +473,11 @@ export default function Dashboard() {
       setTemplates(cloudTemplates.map(({ templateId, title, start, end, category, note, color }) => ({ id: templateId, title, start, end, category, note, color })));
     }
   }, [cloudTemplates, replaceTemplates]);
-  useEffect(() => { if (cloudPalette?.colors) setPalette({ ...builtInPalette, ...(cloudPalette.colors as Palette) }); }, [cloudPalette]);
+  useEffect(() => {
+    if (cloudPalette && typeof cloudPalette === 'object') {
+      setPalette({ ...builtInPalette, ...(cloudPalette as unknown as Palette) });
+    }
+  }, [cloudPalette]);
   useEffect(() => { savePalette(palette); if (cloudReady) void setCloudPalette({ colors: palette }); }, [palette, cloudReady, setCloudPalette]);
   useEffect(() => { saveTemplates(templates); }, [templates]);
   useEffect(() => { document.documentElement.classList.toggle("dark", dark); }, [dark]);      const active = events.find(e => e.id === selected) || null;
@@ -673,7 +677,7 @@ export default function Dashboard() {
                   {!showDeleteConfirm ? (
                     <>
                       <p className="sketch-label text-xs mb-1">delete account</p>
-                      <p className="sketch-body text-[11px] opacity-60 mb-3">Permanently delete your account and all associated data — events, templates, palette, and budgets. This cannot be undone.</p>
+                      <p className="sketch-body text-[11px] opacity-60 mb-3">Permanently delete your account and all associated data — events, templates, and palette. This cannot be undone.</p>
                       <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
                         onClick={() => { setDeleteCode(""); setShowDeleteConfirm(true); }}
                         className="sketch-btn sketch-btn-danger flex items-center gap-1.5">
