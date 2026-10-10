@@ -38,6 +38,11 @@ export default function Terms() {
             </div>
 
             <div>
+              <h3 className="sketch-title text-base mb-2">age requirement</h3>
+              <p>you must be at least 13 years old to use thyme. accounts created by anyone under 13 will be terminated and their data deleted. if you're a parent or guardian and believe your child under 13 has an account, contact us and we'll remove it.</p>
+            </div>
+
+            <div>
               <h3 className="sketch-title text-base mb-2">availability</h3>
               <p>we aim to keep thyme running reliably, but we can't guarantee 100% uptime. we'll always try to communicate about any planned downtime.</p>
             </div>
@@ -49,7 +54,7 @@ export default function Terms() {
 
             <div>
               <h3 className="sketch-title text-base mb-2">contact</h3>
-              <p>anything unclear? reach out at <span className="font-medium">hello@thymeapp.com</span> and we'll sort it out.</p>
+              <p>anything unclear? reach out at <span className="font-medium">thymeplanner.help@proton.me</span> and we'll sort it out.</p>
             </div>
 
           </div>
