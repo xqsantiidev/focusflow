@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Repeat, Bookmark, Sun, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Edit3, LogOut, Plus, X, Repeat, Bookmark, Sun, Moon, Loader2 } from "lucide-react";
 import { parseQuickAdd } from "@/lib/parseQuickAdd";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -454,7 +454,8 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [quickAdd, setQuickAdd] = useState("");
   const currentUser = useQuery(api.users.currentUser);
-  const deleteAccountMutation = useMutation(api.users.deleteAccount);
+  const deleteAccountMutation = useMutation(api.account.deleteAccount);
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
   const onboardedMutation = useMutation(api.planner.setOnboarded);
   const pendingDragRef = useRef<{ id: number; start: string; end: string } | null>(null);
 
@@ -577,12 +578,14 @@ export default function Dashboard() {
   const addCategory = (name: string) => { if (name.trim() && !palette[name.trim()]) { setPalette(p => ({ ...p, [name.trim()]: fallbackColor })); } };
   const removeCategory = (cat: string) => { setPalette(p => { const { [cat]: _, ...rest } = p; return rest; }); };
   const handleDeleteAccount = async () => {
-    if (deleteCode.trim().toLowerCase() !== "delete") return;
+    if (deleteCode.trim().toLowerCase() !== "delete" || deleteInProgress) return;
+    setDeleteInProgress(true);
     try {
       await deleteAccountMutation({ confirm: "delete" });
     } catch (err) {
       console.error(err);
       toast.error("Could not delete your account. Please try again.");
+      setDeleteInProgress(false);
       return;
     }
     /* Wipe locally cached schedule data so nothing lingers on this device. */
@@ -590,7 +593,7 @@ export default function Dashboard() {
       const keys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith("thyme-")) keys.push(key);
+        if (key && key.startsWith("thyme")) keys.push(key);
       }
       keys.forEach(key => localStorage.removeItem(key));
     } catch { /* ignore storage errors */ }
@@ -690,18 +693,21 @@ export default function Dashboard() {
                         value={deleteCode}
                         onChange={e => setDeleteCode(e.target.value)}
                         placeholder="delete"
+                        disabled={deleteInProgress}
                         className="sketch-input w-full"
-                        onKeyDown={e => { if (e.key === "Enter" && deleteCode.trim().toLowerCase() === "delete") { void handleDeleteAccount(); } }}
+                        onKeyDown={e => { if (e.key === "Enter" && !deleteInProgress && deleteCode.trim().toLowerCase() === "delete") { void handleDeleteAccount(); } }}
                       />
                       <div className="mt-3 flex gap-2">
                         <motion.button whileTap={{ scale: 0.96 }}
                           onClick={() => { setShowDeleteConfirm(false); setDeleteCode(""); }}
-                          className="sketch-btn">cancel</motion.button>
+                          disabled={deleteInProgress}
+                          className="sketch-btn disabled:opacity-40">cancel</motion.button>
                         <motion.button whileTap={{ scale: 0.96 }}
                           onClick={() => { void handleDeleteAccount(); }}
-                          disabled={deleteCode.trim().toLowerCase() !== "delete"}
-                          className="sketch-btn sketch-btn-danger disabled:cursor-not-allowed disabled:opacity-40">
-                          permanently delete
+                          disabled={deleteInProgress || deleteCode.trim().toLowerCase() !== "delete"}
+                          className="sketch-btn sketch-btn-danger flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40">
+                          {deleteInProgress && <Loader2 className="size-3.5 animate-spin" />}
+                          {deleteInProgress ? "deleting..." : "permanently delete"}
                         </motion.button>
                       </div>
                     </motion.div>
