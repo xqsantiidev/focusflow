@@ -16,6 +16,16 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'Didoska';
+  src: url('/fonts/didoska-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+.didoska-home-intro {
+  font-family: 'Didoska', 'Instrument Serif', Georgia, serif;
+}
 .thyme-wordmark {
   font-family: 'Torumi', cursive;
   font-weight: 400;

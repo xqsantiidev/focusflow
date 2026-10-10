@@ -178,11 +178,11 @@ export default function Landing() {
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
-          <h1 className="hero-display text-6xl sm:text-7xl mt-20 leading-[1.05]">
+          <h1 className="hero-display didoska-home-intro text-6xl sm:text-7xl mt-20 leading-[1.05]">
             your day,<br />
             <span className="text-[#8a8678]">drawn out.</span>
           </h1>
-          <p className="hero-copy text-lg mt-6 max-w-sm opacity-80">
+          <p className="hero-copy didoska-home-intro text-lg mt-6 max-w-sm opacity-80">
             thyme is a daily planner that turns your schedule into a hand-drawn circle — colorful, creative, and yours.
           </p>
           <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-8">
