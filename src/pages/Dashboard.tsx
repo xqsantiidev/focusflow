@@ -44,7 +44,6 @@ function loadEvents(date: Date): Event[] {
     const raw = localStorage.getItem(keyFor(date));
     if (raw) return sanitizeEvents(JSON.parse(raw));
   } catch { /* ignore */ }
-  if (date.toDateString() === new Date().toDateString()) return defaultDay;
   /* Seed from repeating blocks on other days */
   const repeating: Event[] = [];
   for (let i = 0; i < 7; i++) {
@@ -62,21 +61,6 @@ function loadPalette(): Palette { try { return { ...builtInPalette, ...JSON.pars
 function savePalette(p: Palette) { localStorage.setItem("thyme-palette", JSON.stringify(p)); }
 function loadEnergy(date: Date): EnergyLog[] { try { return JSON.parse(localStorage.getItem(`thyme-energy-${date.toISOString().slice(0, 10)}`) || "[]"); } catch { return []; } }
 function saveEnergy(date: Date, logs: EnergyLog[]) { localStorage.setItem(`thyme-energy-${date.toISOString().slice(0, 10)}`, JSON.stringify(logs)); }
-
-
-const defaultDay: Event[] = [
-  { id: 1, title: "Pre-Calculus", start: "07:30", end: "08:30", category: "Class", note: "", repeat: [], color: undefined },
-  { id: 2, title: "Exercise", start: "08:30", end: "09:15", category: "Health", note: "", repeat: [], color: undefined },
-  { id: 3, title: "Government", start: "10:00", end: "11:00", category: "Class", note: "", repeat: [], color: undefined },
-  { id: 4, title: "Chemistry", start: "11:30", end: "12:30", category: "Class", note: "", repeat: [], color: undefined },
-  { id: 5, title: "Communication Arts", start: "12:45", end: "13:45", category: "Class", note: "", repeat: [], color: undefined },
-  { id: 6, title: "Transportation", start: "14:00", end: "14:30", category: "Commute", note: "", repeat: [], color: undefined },
-  { id: 7, title: "Pre-Calculus Assignment", start: "15:00", end: "16:00", category: "Study", note: "", repeat: [], color: undefined },
-  { id: 8, title: "Make Project Video", start: "16:15", end: "17:15", category: "Life", note: "", repeat: [], color: undefined },
-  { id: 9, title: "Take-Home Quiz", start: "17:30", end: "18:30", category: "Study", note: "", repeat: [], color: undefined },
-  { id: 10, title: "Free time", start: "19:00", end: "20:30", category: "Free", note: "", repeat: [], color: undefined },
-  { id: 11, title: "Daredevil", start: "20:30", end: "21:15", category: "Free", note: "", repeat: [], color: undefined },
-];
 
 /* ── Circle component ──────────────────────────────────────── */
 function SketchCircle({
@@ -414,7 +398,8 @@ export default function Dashboard() {
   const [date, setDate] = useState(() => new Date());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
-  const [events, setEvents] = useState<Event[]>(() => loadEvents(new Date()));
+  const [events, setEvents] = useState<Event[]>([]);
+  const [cloudReady, setCloudReady] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const [editing, setEditing] = useState<Event | null>(null);
   const [palette, setPalette] = useState<Palette>(loadPalette);
@@ -450,7 +435,6 @@ export default function Dashboard() {
   const deleteCloudTemplate = useMutation(api.planner.deleteTemplate);
   const replaceTemplates = useMutation(api.planner.replaceTemplates);
   const setCloudPalette = useMutation(api.planner.setPalette);
-  const [cloudReady, setCloudReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [quickAdd, setQuickAdd] = useState("");
   const currentUser = useQuery(api.users.currentUser);
@@ -459,11 +443,24 @@ export default function Dashboard() {
   const onboardedMutation = useMutation(api.planner.setOnboarded);
   const pendingDragRef = useRef<{ id: number; start: string; end: string } | null>(null);
 
+  /* First run for the day: wait for both Convex and the user record, then
+     either show onboarding (never-onboarded user) or migrate any saved
+     localStorage events for this date into Convex. No demo data — an empty
+     cloud day just stays empty until onboarding fills it. */
   useEffect(() => {
-    if (cloudEvents === undefined) return;
+    if (cloudEvents === undefined || currentUser === undefined) return;
     const next = cloudEvents.map(({ eventId, title, start, end, category, note, repeat, color }) => ({ id: eventId, title, start, end, category, note, repeat, color }));
     if (cloudReady) setEvents(next.sort((a, b) => toMin(a.start) - toMin(b.start)));
-    else if (cloudEvents.length === 0) { const userOnboarded = currentUser?.onboarded; if (userOnboarded === false || (userOnboarded === undefined && currentUser !== null)) { setShowOnboarding(true); } else { void replaceDayEvents({ day: dayKey, events: loadEvents(date).map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) }); } }
+    else if (cloudEvents.length === 0) {
+      if (currentUser === null) return;
+      /* localStorage has saved events for this date — migrate them into Convex. */
+      const localEvents = loadEvents(date).filter(e => (e.repeat || []).length === 0 || (e.repeat || []).includes(date.getDay()));
+      if (localEvents.length > 0) {
+        void replaceDayEvents({ day: dayKey, events: localEvents.map(e => ({ eventId: e.id, day: dayKey, title: e.title, start: e.start, end: e.end, category: e.category, note: e.note, repeat: e.repeat || [], color: e.color })) });
+      } else if (currentUser.onboarded === false) {
+        setShowOnboarding(true);
+      }
+    }
     setCloudReady(true);
   }, [cloudEvents, cloudReady, date, dayKey, replaceDayEvents, currentUser]);
   useEffect(() => { if (cloudReady) saveEvents(date, events); }, [events, date, cloudReady]);
@@ -998,7 +995,7 @@ function OnboardingView({ onChoose }: { onChoose: (events: Event[]) => void }) {
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08, type: "spring", stiffness: 260, damping: 20 }}
               whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.96 }}
-              onClick={() => onChoose(pack.events.map(e => ({ ...e })))}
+              onClick={() => onChoose(pack.events.map((e, i) => ({ ...e, id: Date.now() + i })))}
               className="group rounded-xl border-2 border-[var(--sketch-border)] bg-[var(--sketch-card)] p-4 text-left transition-colors hover:border-[var(--sketch-fg)] hover:bg-[var(--sketch-card)]">
               <div className="text-2xl mb-2">{pack.icon}</div>
               <div className="font-hand text-base text-[var(--sketch-fg)] mb-1">{pack.name}</div>
