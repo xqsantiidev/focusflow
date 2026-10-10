@@ -1,17 +1,3 @@
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Dialog } from "@radix-ui/react-dialog";
-import { ChevronDown, ExternalLink } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 type SyncError = {
@@ -54,52 +40,19 @@ async function reportErrorToVly(errorData: {
   }
 }
 
-function ErrorDialog({
-  error,
-  setError,
-}: {
-  error: GenericError;
-  setError: (error: GenericError | null) => void;
-}) {
+function ErrorFallback() {
   return (
-    <Dialog
-      defaultOpen={true}
-      onOpenChange={() => {
-        setError(null);
-      }}
-    >
-      <DialogContent className="bg-red-700 text-white max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Runtime Error</DialogTitle>
-        </DialogHeader>
-        A runtime error occurred. Open the vly editor to automatically debug the
-        error.
-        <div className="mt-4">
-          <Collapsible>
-            <CollapsibleTrigger>
-              <div className="flex items-center font-bold cursor-pointer">
-                See error details <ChevronDown />
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="max-w-[460px]">
-              <div className="mt-2 p-3 bg-neutral-800 rounded text-white text-sm overflow-x-auto max-h-60 max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <pre className="whitespace-pre">{error.stack}</pre>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-        <DialogFooter>
-          <a
-            href={`https://freebuff.com/project/${import.meta.env.VITE_VLY_APP_ID}`}
-            target="_blank"
-          >
-            <Button>
-              <ExternalLink /> Open editor
-            </Button>
-          </a>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: "var(--sketch-bg, #faf8f0)", color: "var(--sketch-fg, #3a3830)" }}>
+      <div className="font-hand text-5xl">🫙</div>
+      <h1 className="sketch-title text-2xl">something went wrong</h1>
+      <p className="sketch-body text-sm opacity-60 max-w-xs">we hit an unexpected snag while loading thyme. reloading usually fixes it.</p>
+      <button
+        onClick={() => { window.location.reload(); }}
+        className="sketch-btn cursor-pointer"
+      >
+        reload
+      </button>
+    </div>
   );
 }
 
@@ -152,15 +105,7 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       // You can render any custom fallback UI
-      return (
-        <ErrorDialog
-          error={{
-            error: "An error occurred",
-            stack: "",
-          }}
-          setError={() => {}}
-        />
-      );
+      return <ErrorFallback />;
     }
 
     return this.props.children;
@@ -177,7 +122,6 @@ export function InstrumentationProvider({
   useEffect(() => {
     const handleError = async (event: ErrorEvent) => {
       try {
-        console.log(event);
         event.preventDefault();
         setError({
           error: event.message,
@@ -232,7 +176,7 @@ export function InstrumentationProvider({
   return (
     <>
       <ErrorBoundary>{children}</ErrorBoundary>
-      {error && <ErrorDialog error={error} setError={setError} />}
+      {error && <ErrorFallback />}
     </>
   );
 }
