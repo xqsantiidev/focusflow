@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { ThymeWordmark } from "@/components/ThymeWordmark";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -614,7 +615,7 @@ export default function Dashboard() {
           className="flex items-center justify-between">
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => setDate(new Date())} className="sketch-link flex items-center gap-2 text-xl font-bold">
-            thyme<span className="text-[#e55b5b]">.</span>
+            <ThymeWordmark className="text-2xl" />
           </motion.button>
           <div className="flex items-center gap-3">
             <motion.button whileHover={{ scale: 1.08, rotate: 5 }} whileTap={{ scale: 0.9 }}

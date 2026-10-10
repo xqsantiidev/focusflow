@@ -9,6 +9,13 @@
   font-style: normal;
   font-display: swap;
 }
+.thyme-wordmark {
+  font-family: 'Monday Feelings', cursive;
+  font-weight: 400;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  color: var(--sketch-fg, #3a3830);
+}
 @font-face {
   font-family: 'Milky Cream';
   src: url('/fonts/milky-cream.otf') format('opentype');

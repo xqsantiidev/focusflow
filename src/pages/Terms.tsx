@@ -1,3 +1,4 @@
+import { ThymeWordmark } from "@/components/ThymeWordmark";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
@@ -10,7 +11,7 @@ export default function Terms() {
       <div className="mx-auto max-w-[520px] px-6 pb-24 pt-10">
         <header className="flex items-center justify-between mb-12">
           <button onClick={() => navigate("/")} className="sketch-link text-sm">← back</button>
-          <span className="sketch-title text-xl">thyme<span className="text-[#e55b5b]">.</span></span>
+          <ThymeWordmark className="text-xl" />
         </header>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <h1 className="sketch-title text-3xl">terms of service</h1>
