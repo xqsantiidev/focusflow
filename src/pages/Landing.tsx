@@ -42,7 +42,57 @@ const SEG_CENTERS = SEG_SPANS.map(([a, b]) => {
   return { x: 200 + 110 * Math.cos(mid), y: 200 + 110 * Math.sin(mid) };
 });
 
+/* ── Intro gate: fullscreen wordmark that zooms toward the user on scroll ── */
+function IntroGate({ onDone }: { onDone: () => void }) {
+  const [leaving, setLeaving] = useState(false);
+  const [gone, setGone] = useState(false);
+  const accumulating = useRef(0);
+  const coolDown = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.body.style.overflow = "hidden";
+    const swallow = (e: Event) => { e.preventDefault(); };
+    // prevent touch scrolling while gate is up (wheel is intercepted below)
+    window.addEventListener("touchmove", swallow, { passive: false });
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("touchmove", swallow);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (coolDown.current) return;
+      accumulating.current += Math.abs(e.deltaY);
+      if (accumulating.current < 140) return;
+      accumulating.current = 0;
+      coolDown.current = true;
+      setLeaving(true);
+      window.setTimeout(() => setGone(true), 1100);
+      window.setTimeout(() => {
+        onDone();
+        coolDown.current = false;
+      }, 1200);
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [onDone]);
+
+  if (gone) return null;
+  return (
+    <div className="intro-gate" data-leaving={leaving ? "1" : "0"}>
+      <div className="intro-gate-word">
+        <ThymeWordmark />
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
+  const [gate, setGate] = useState(true);
   const navigate = useNavigate();
   const showcaseRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
@@ -166,7 +216,9 @@ export default function Landing() {
     phase === "c2" ? "tap to add" :
     phase === "c3" ? "your sketchbook" : null;
   return (
-    <main className="sketchbook min-h-screen overflow-hidden">
+    <main className={gate ? "sketchbook sketchbook-hold" : "sketchbook min-h-screen overflow-hidden"}>
+      {gate && <IntroGate onDone={() => setGate(false)} />}
+      {!gate && (
       <div className="mx-auto max-w-[620px] px-6 pb-24 pt-10">
         {/* Header */}
         <header className="flex items-center justify-between">
@@ -594,6 +646,7 @@ export default function Landing() {
         </footer>
         </div>
       </div>
+      )}
     </main>
   );
 }
