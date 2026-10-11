@@ -23,8 +23,11 @@
   font-style: normal;
   font-display: swap;
 }
-.didoska-home-intro {
+h1.didoska-home-intro,
+p.didoska-home-intro,
+.didoska-home-intro.didoska-home-intro {
   font-family: 'Didoska', 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
 }
 .thyme-wordmark {
   font-family: 'Torumi', cursive;
