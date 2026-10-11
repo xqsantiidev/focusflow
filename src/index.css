@@ -322,7 +322,70 @@ p.clayze-hero-copy,
   opacity: 0.9;
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+/* ── Hand-writing CTA: text vanishes and is rewritten letter-by-letter, then a squiggle underline draws ── */
+.handwrite-btn {
+  position: relative;
 }
+.handwrite-idle,
+.handwrite-live {
+  grid-area: 1 / 1 / 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.handwrite-live {
+  font-family: 'Shantell Sans Variable', 'Comic Sans MS', cursive;
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+.handwrite-live span {
+  display: inline-block;
+  white-space: pre;
+}
+.handwrite-underline {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 2px;
+  height: 7px;
+  pointer-events: none;
+}
+.handwrite-underline path {
+  fill: none;
+  stroke: var(--sketch-bg);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.handwrite-btn .handwrite-idle {
+  z-index: 1;
+}
+.handwrite-btn.is-writing .handwrite-idle {
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.handwrite-live span {
+  opacity: 0;
+  transform: translateY(0.35em) rotate(8deg);
+  animation: hw-letter-in 0.18s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
+}
+@keyframes hw-letter-in {
+  to { opacity: 1; transform: translateY(0) rotate(0deg); }
+}
+@keyframes hw-scribble-in {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .handwrite-live span {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .handwrite-underline path {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}}
 .sketch-btn-primary:active {
   transform: scale(0.98);
 }

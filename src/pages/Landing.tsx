@@ -1,8 +1,8 @@
 import { ThymeWordmark } from "@/components/ThymeWordmark";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 
 /* ── Intro geometry (module-level so animation targets stay stable) ── */
 const SEGMENTS: { d: string; fill: string; dx: number; dy: number; rot: number }[] = [
@@ -119,6 +119,45 @@ function IntroGate({ onDone }: { onDone: () => void }) {
         <ThymeWordmark />
       </div>
     </div>
+  );
+}
+
+/* ── CTA that "hand-writes" its label on hover: letters pop in one-by-one, then a scribble underline draws ── */
+function HandwriteButton({ label, onClick }: { label: string; onClick: () => void }) {
+  const [writing, setWriting] = useState(false);
+  const letters = useMemo(() => Array.from(label), [label]);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setWriting(true)}
+      onAnimationEnd={e => { if (e.animationName === "hw-scribble-in") setWriting(false); }}
+      className={`sketch-btn-primary handwrite-btn mt-8 ${writing ? "is-writing" : ""}`}
+      style={{ display: "grid" }}
+      aria-label={label}>
+      <span className="handwrite-idle" aria-hidden={writing}>
+        {label}
+      </span>
+      {writing && (
+        <span className="handwrite-live">
+          {letters.map((ch, i) => (
+            <span key={`${i}-${ch}`} style={{ animationDelay: `${i * 45}ms` }}>{ch}</span>
+          ))}
+        </span>
+      )}
+      {writing && (
+        <svg className="handwrite-underline" viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M2 5.5 C 20 2.6, 40 7.4, 60 4.8 S 100 2.4, 118 5.6"
+            pathLength={1}
+            style={{
+              strokeDasharray: 1,
+              strokeDashoffset: 1,
+              animation: "hw-scribble-in 0.45s ease-out forwards",
+              animationDelay: `${letters.length * 45 + 60}ms`,
+              vectorEffect: "non-scaling-stroke",
+            }} />
+        </svg>
+      )}
+    </button>
   );
 }
 
@@ -268,9 +307,7 @@ export default function Landing() {
           <p className="hero-copy clayze-hero-copy text-lg mt-6 max-w-sm opacity-80">
             thyme is a daily planner that turns your schedule into a hand-drawn circle — colorful, creative, and yours.
           </p>
-          <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-8">
-            plan my day
-          </button>
+          <HandwriteButton label="plan my day" onClick={() => navigate("/auth")} />
         </motion.div>
 
         {/* Sketch circle preview — loads, then a click-driven shatter story */}
