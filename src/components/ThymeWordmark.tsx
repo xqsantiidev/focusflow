@@ -10,6 +10,7 @@ export function ThymeWordmark({
         aria-hidden="true"
         viewBox="0 0 32 32"
         className="size-[1.05em] shrink-0 text-[#71835b]"
+        style={{ shapeRendering: "geometricPrecision" }}
         fill="none"
         stroke="currentColor"
         strokeLinecap="round"

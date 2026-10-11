@@ -1,5 +1,5 @@
 import { ThymeWordmark } from "@/components/ThymeWordmark";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -46,10 +46,13 @@ const SEG_CENTERS = SEG_SPANS.map(([a, b]) => {
 function IntroGate({ onDone }: { onDone: () => void }) {
   const gateRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
-  const target = useRef(0);   // 0..1 scroll progress
-  const current = useRef(0);  // smoothed value chasing target
   const baseFont = useRef<number | null>(null);
   const doneFired = useRef(false);
+
+  /* scroll accumulates into `progress`; `smooth` is a critically-tuned spring
+     chasing it, so every small scroll glides instead of stepping */
+  const progress = useMotionValue(0);
+  const smooth = useSpring(progress, { stiffness: 80, damping: 22, mass: 0.9 });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -70,37 +73,25 @@ function IntroGate({ onDone }: { onDone: () => void }) {
 
     const ZOOM_PER_PX = 0.0016;   // wheel distance to full zoom
     const MAX_SCALE = 16;
-    const FADE_START = 0.7;       // fade begins at 70% progress
+    const FADE_START = 0.72;      // fade begins in the final stretch
 
-    const apply = (p: number) => {
+    const unsub = smooth.on("change", (p: number) => {
       if (baseFont.current === null) {
         baseFont.current = parseFloat(getComputedStyle(word).fontSize) || 96;
       }
-      const s = 1 + p * (MAX_SCALE - 1);
-      word.style.fontSize = `${baseFont.current * s}px`;
+      word.style.fontSize = `${baseFont.current * (1 + p * (MAX_SCALE - 1))}px`;
       const opacity = p <= FADE_START ? 1 : Math.max(0, 1 - (p - FADE_START) / (1 - FADE_START));
       gate.style.opacity = String(opacity);
-    };
-
-    const finishRef = { fired: false };
-    let raf = 0;
-    const loop = () => {
-      // smooth chase for buttery incremental motion
-      current.current += (target.current - current.current) * 0.14;
-      if (Math.abs(target.current - current.current) < 0.0015) current.current = target.current;
-      apply(current.current);
-      if (!doneFired.current && target.current >= 1 && current.current > 0.995) {
+      if (!doneFired.current && p > 0.995) {
         doneFired.current = true;
-        window.setTimeout(onDone, 380); // let the fade finish visually
+        window.setTimeout(onDone, 320); // let the fade finish visually
       }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
+    });
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (doneFired.current) return;
-      target.current = Math.min(1, target.current + Math.abs(e.deltaY) * ZOOM_PER_PX);
+      progress.set(Math.min(1, progress.get() + Math.abs(e.deltaY) * ZOOM_PER_PX));
     };
     let touchY: number | null = null;
     const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? null; };
@@ -108,20 +99,19 @@ function IntroGate({ onDone }: { onDone: () => void }) {
       if (doneFired.current || touchY === null) return;
       const y = e.touches[0]?.clientY;
       if (y === undefined) return;
-      target.current = Math.min(1, target.current + Math.abs(touchY - y) * ZOOM_PER_PX);
+      progress.set(Math.min(1, progress.get() + Math.abs(touchY - y) * ZOOM_PER_PX));
       touchY = y;
     };
     window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     return () => {
-      cancelAnimationFrame(raf);
+      unsub();
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
-      void finishRef;
     };
-  }, [onDone]);
+  }, [onDone, progress, smooth]);
 
   return (
     <div ref={gateRef} className="intro-gate">
