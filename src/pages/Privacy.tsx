@@ -11,7 +11,7 @@ export default function Privacy() {
       <div className="mx-auto max-w-[520px] px-6 pb-24 pt-10">
         <header className="flex items-center justify-between mb-12">
           <button onClick={() => navigate("/")} className="sketch-link text-sm">← back</button>
-          <ThymeWordmark className="text-xl" />
+          <ThymeWordmark className="text-2xl" />
         </header>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <h1 className="sketch-title text-3xl">privacy policy</h1>

@@ -170,7 +170,7 @@ export default function Landing() {
       <div className="mx-auto max-w-[620px] px-6 pb-24 pt-10">
         {/* Header */}
         <header className="flex items-center justify-between">
-          <ThymeWordmark className="text-2xl" />
+          <ThymeWordmark className="text-3xl" />
           <button onClick={() => navigate("/auth")} className="sketch-link text-sm">
             open thyme →
           </button>
@@ -585,7 +585,7 @@ export default function Landing() {
 
         {/* Footer */}
         <footer className="mt-24 pt-8 border-t border-[var(--sketch-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
-          <ThymeWordmark className="text-sm" />
+          <ThymeWordmark className="text-base" />
           <div className="flex items-center gap-5">
             <button onClick={() => navigate("/privacy")} className="sketch-body opacity-40 hover:opacity-80 transition-opacity">privacy</button>
             <button onClick={() => navigate("/terms")} className="sketch-body opacity-40 hover:opacity-80 transition-opacity">terms</button>

@@ -615,7 +615,7 @@ export default function Dashboard() {
           className="flex items-center justify-between">
           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
             onClick={() => setDate(new Date())} className="sketch-link flex items-center gap-2 text-xl font-bold">
-            <ThymeWordmark className="text-2xl" />
+            <ThymeWordmark className="text-3xl" />
           </motion.button>
           <div className="flex items-center gap-3">
             <motion.button whileHover={{ scale: 1.08, rotate: 5 }} whileTap={{ scale: 0.9 }}
