@@ -122,41 +122,39 @@ function IntroGate({ onDone }: { onDone: () => void }) {
   );
 }
 
-/* ── CTA that "hand-writes" its label on hover: letters pop in one-by-one, then a scribble underline draws ── */
+/* ── Original CTA: forever hand-writing itself. Each cycle writes the label letter-by-letter,
+   sketches a squiggle underline, holds, erases, then starts over. It IS the label — no hover needed. ── */
 function HandwriteButton({ label, onClick }: { label: string; onClick: () => void }) {
-  const [writing, setWriting] = useState(false);
   const letters = useMemo(() => Array.from(label), [label]);
+  const perLetter = 65;                              // ms between letters
+  const underlineAt = letters.length * perLetter + 320; // underline starts after the "pen" finishes
+  const eraseAt = underlineAt + 1150;                // hold finished → wipe to blank
+  const cycleMs = eraseAt + 420 + 250;               // erase fade + beat, then rewrite
+  const [cycle, setCycle] = useState(0);
+  const [erasing, setErasing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const eraseTimer = window.setTimeout(() => setErasing(true), eraseAt);
+    const cycleTimer = window.setTimeout(() => { setErasing(false); setCycle(c => c + 1); }, cycleMs);
+    return () => { window.clearTimeout(eraseTimer); window.clearTimeout(cycleTimer); };
+  }, [cycle, eraseAt, cycleMs]);
+
   return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setWriting(true)}
-      onAnimationEnd={e => { if (e.animationName === "hw-scribble-in") setWriting(false); }}
-      className={`sketch-btn-primary handwrite-btn mt-8 ${writing ? "is-writing" : ""}`}
-      style={{ display: "grid" }}
-      aria-label={label}>
-      <span className="handwrite-idle" aria-hidden={writing}>
-        {label}
+    <button onClick={onClick} className="sketch-btn-primary handwrite-btn mt-8" style={{ display: "grid" }} aria-label={label}>
+      {/* hidden twin: locks layout size, readable by screen readers */}
+      <span className="handwrite-static" aria-hidden="true">{label}</span>
+      <span key={cycle} className={`handwrite-live ${erasing ? "hw-erasing" : ""}`} role="presentation">
+        {letters.map((ch, i) => (
+          <span key={i} style={{ animationDelay: `${i * perLetter}ms` }}>{ch}</span>
+        ))}
       </span>
-      {writing && (
-        <span className="handwrite-live">
-          {letters.map((ch, i) => (
-            <span key={`${i}-${ch}`} style={{ animationDelay: `${i * 45}ms` }}>{ch}</span>
-          ))}
-        </span>
-      )}
-      {writing && (
-        <svg className="handwrite-underline" viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M2 5.5 C 20 2.6, 40 7.4, 60 4.8 S 100 2.4, 118 5.6"
-            pathLength={1}
-            style={{
-              strokeDasharray: 1,
-              strokeDashoffset: 1,
-              animation: "hw-scribble-in 0.45s ease-out forwards",
-              animationDelay: `${letters.length * 45 + 60}ms`,
-              vectorEffect: "non-scaling-stroke",
-            }} />
-        </svg>
-      )}
+      <svg key={`u${cycle}`} className={`handwrite-underline ${erasing ? "hw-erasing" : ""}`} viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M2 5.5 C 20 2.6, 40 7.4, 60 4.8 S 100 2.4, 118 5.6"
+          pathLength={1}
+          style={{ animationDelay: `${underlineAt}ms`, vectorEffect: "non-scaling-stroke" }} />
+      </svg>
     </button>
   );
 }

@@ -324,16 +324,21 @@ p.clayze-hero-copy,
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* ── Hand-writing CTA: text vanishes and is rewritten letter-by-letter, then a squiggle underline draws ── */
+/* ── Original CTA: forever hand-writing its label. Letters are built from TWO strokes
+   (rise + settle) so each glyph reads as being sketched, and everything erases at the
+   end of each cycle before the next pass begins. ── */
 .handwrite-btn {
   position: relative;
 }
-.handwrite-idle,
+.handwrite-static,
 .handwrite-live {
   grid-area: 1 / 1 / 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.handwrite-static {
+  visibility: hidden;
 }
 .handwrite-live {
   font-family: 'Shantell Sans Variable', 'Comic Sans MS', cursive;
@@ -343,6 +348,9 @@ p.clayze-hero-copy,
 .handwrite-live span {
   display: inline-block;
   white-space: pre;
+  opacity: 0;
+  /* each glyph "is sketched": rises from below the baseline, over-rotated, then settles */
+  animation: hw-letter-in 0.16s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
 }
 .handwrite-underline {
   position: absolute;
@@ -357,25 +365,35 @@ p.clayze-hero-copy,
   stroke: var(--sketch-bg);
   stroke-width: 2.2;
   stroke-linecap: round;
-}
-.handwrite-btn .handwrite-idle {
-  z-index: 1;
-}
-.handwrite-btn.is-writing .handwrite-idle {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
   opacity: 0;
-  transition: opacity 0.12s;
+  animation: hw-scribble-in 0.45s ease-out forwards;
 }
-.handwrite-live span {
-  opacity: 0;
-  transform: translateY(0.35em) rotate(8deg);
-  animation: hw-letter-in 0.18s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
-}
+
+/* Letter sketch pass: nib lays the glyph down from below with a tilt */
 @keyframes hw-letter-in {
-  to { opacity: 1; transform: translateY(0) rotate(0deg); }
+  0%   { opacity: 0; transform: translateY(0.38em) rotate(7deg); }
+  55%  { opacity: 1; transform: translateY(-0.03em) rotate(-1.5deg); }
+  100% { opacity: 1; transform: translateY(0) rotate(0deg); }
 }
+
+/* Underline draws itself after the label is written */
 @keyframes hw-scribble-in {
-  to { stroke-dashoffset: 0; }
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  25% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
 }
+
+/* Erase phase: whole label + underline wipe like being rubbed out, then the cycle remounts */
+.hw-erasing {
+  opacity: 0 !important;
+  transition: opacity 0.4s ease-in;
+}
+.hw-erasing path {
+  opacity: 0 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .handwrite-live span {
     animation: none;
@@ -383,10 +401,12 @@ p.clayze-hero-copy,
     transform: none;
   }
   .handwrite-underline path {
-    animation: none !important;
-    stroke-dashoffset: 0 !important;
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
   }
 }
+
 .sketch-btn-primary:active {
   transform: scale(0.98);
 }
