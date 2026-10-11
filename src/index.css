@@ -385,15 +385,6 @@ p.clayze-hero-copy,
   100% { stroke-dashoffset: 0; opacity: 1; }
 }
 
-/* Erase phase: whole label + underline wipe like being rubbed out, then the cycle remounts */
-.hw-erasing {
-  opacity: 0 !important;
-  transition: opacity 0.4s ease-in;
-}
-.hw-erasing path {
-  opacity: 0 !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .handwrite-live span {
     animation: none;
