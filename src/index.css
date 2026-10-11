@@ -322,6 +322,7 @@ p.clayze-hero-copy,
   opacity: 0.9;
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
 
 /* ── Hand-writing CTA: text vanishes and is rewritten letter-by-letter, then a squiggle underline draws ── */
 .handwrite-btn {
@@ -385,7 +386,7 @@ p.clayze-hero-copy,
     animation: none !important;
     stroke-dashoffset: 0 !important;
   }
-}}
+}
 .sketch-btn-primary:active {
   transform: scale(0.98);
 }
