@@ -30,6 +30,19 @@ p.thyme-wordmark-font,
   font-weight: 400;
   letter-spacing: 0.015em;
 }
+@font-face {
+  font-family: 'Clayze Trial';
+  src: url('/fonts/clayze-trial.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+p.clayze-hero-copy,
+.clayze-hero-copy.clayze-hero-copy {
+  font-family: 'Clayze Trial', 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+}
+
 .thyme-wordmark {
   font-family: 'Didoska', 'Instrument Serif', Georgia, serif;
   font-weight: 400;
