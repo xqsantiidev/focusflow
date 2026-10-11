@@ -42,18 +42,19 @@ const SEG_CENTERS = SEG_SPANS.map(([a, b]) => {
   return { x: 200 + 110 * Math.cos(mid), y: 200 + 110 * Math.sin(mid) };
 });
 
-/* ── Intro gate: fullscreen wordmark that zooms toward the user on scroll ── */
+/* ── Intro gate: fullscreen wordmark; scroll zooms in incrementally, fade at the end ── */
 function IntroGate({ onDone }: { onDone: () => void }) {
-  const [leaving, setLeaving] = useState(false);
-  const [gone, setGone] = useState(false);
-  const accumulating = useRef(0);
-  const coolDown = useRef(false);
+  const gateRef = useRef<HTMLDivElement>(null);
+  const wordRef = useRef<HTMLDivElement>(null);
+  const target = useRef(0);   // 0..1 scroll progress
+  const current = useRef(0);  // smoothed value chasing target
+  const baseFont = useRef<number | null>(null);
+  const doneFired = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     document.body.style.overflow = "hidden";
     const swallow = (e: Event) => { e.preventDefault(); };
-    // prevent touch scrolling while gate is up (wheel is intercepted below)
     window.addEventListener("touchmove", swallow, { passive: false });
     return () => {
       document.body.style.overflow = "";
@@ -63,28 +64,68 @@ function IntroGate({ onDone }: { onDone: () => void }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const gate = gateRef.current;
+    const word = wordRef.current;
+    if (!gate || !word) return;
+
+    const ZOOM_PER_PX = 0.0016;   // wheel distance to full zoom
+    const MAX_SCALE = 16;
+    const FADE_START = 0.7;       // fade begins at 70% progress
+
+    const apply = (p: number) => {
+      if (baseFont.current === null) {
+        baseFont.current = parseFloat(getComputedStyle(word).fontSize) || 96;
+      }
+      const s = 1 + p * (MAX_SCALE - 1);
+      word.style.fontSize = `${baseFont.current * s}px`;
+      const opacity = p <= FADE_START ? 1 : Math.max(0, 1 - (p - FADE_START) / (1 - FADE_START));
+      gate.style.opacity = String(opacity);
+    };
+
+    const finishRef = { fired: false };
+    let raf = 0;
+    const loop = () => {
+      // smooth chase for buttery incremental motion
+      current.current += (target.current - current.current) * 0.14;
+      if (Math.abs(target.current - current.current) < 0.0015) current.current = target.current;
+      apply(current.current);
+      if (!doneFired.current && target.current >= 1 && current.current > 0.995) {
+        doneFired.current = true;
+        window.setTimeout(onDone, 380); // let the fade finish visually
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      if (coolDown.current) return;
-      accumulating.current += Math.abs(e.deltaY);
-      if (accumulating.current < 140) return;
-      accumulating.current = 0;
-      coolDown.current = true;
-      setLeaving(true);
-      window.setTimeout(() => setGone(true), 1100);
-      window.setTimeout(() => {
-        onDone();
-        coolDown.current = false;
-      }, 1200);
+      if (doneFired.current) return;
+      target.current = Math.min(1, target.current + Math.abs(e.deltaY) * ZOOM_PER_PX);
+    };
+    let touchY: number | null = null;
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? null; };
+    const onTouchMove = (e: TouchEvent) => {
+      if (doneFired.current || touchY === null) return;
+      const y = e.touches[0]?.clientY;
+      if (y === undefined) return;
+      target.current = Math.min(1, target.current + Math.abs(touchY - y) * ZOOM_PER_PX);
+      touchY = y;
     };
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      void finishRef;
+    };
   }, [onDone]);
 
-  if (gone) return null;
   return (
-    <div className="intro-gate" data-leaving={leaving ? "1" : "0"}>
-      <div className="intro-gate-word">
+    <div ref={gateRef} className="intro-gate">
+      <div ref={wordRef} className="intro-gate-word">
         <ThymeWordmark />
       </div>
     </div>
