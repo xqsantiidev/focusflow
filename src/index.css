@@ -23,6 +23,13 @@
   font-style: normal;
   font-display: swap;
 }
+h1.thyme-wordmark-font,
+p.thyme-wordmark-font,
+.thyme-wordmark-font.thyme-wordmark-font {
+  font-family: 'Torumi', 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0.015em;
+}
 .thyme-wordmark {
   font-family: 'Didoska', 'Instrument Serif', Georgia, serif;
   font-weight: 400;

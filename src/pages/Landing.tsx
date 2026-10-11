@@ -178,7 +178,7 @@ export default function Landing() {
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .6 }}>
-          <h1 className="hero-display text-6xl sm:text-7xl mt-20 leading-[1.05]">
+          <h1 className="hero-display thyme-wordmark-font text-6xl sm:text-7xl mt-20 leading-[1.05]">
             your day,<br />
             <span className="text-[#8a8678]">drawn out.</span>
           </h1>
