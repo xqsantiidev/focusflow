@@ -7,16 +7,19 @@ export default function Privacy() {
   const navigate = useNavigate();
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
-    <main className="sketchbook min-h-screen">
-      <div className="mx-auto max-w-[680px] px-6 pb-24 pt-10">
-        <header className="flex items-center justify-between mb-8">
+    <main className="sketchbook legal-page min-h-screen">
+      <div className="mx-auto max-w-[820px] px-5 pb-24 pt-8 sm:px-8 sm:pt-12">
+        <header className="flex items-center justify-between mb-10">
           <button onClick={() => navigate("/")} className="sketch-link text-sm">← back</button>
           <ThymeWordmark className="text-2xl" />
         </header>
         <motion.div className="legal-document" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <h1 className="sketch-title text-3xl">privacy policy</h1>
-          <p className="sketch-label text-xs mt-2 opacity-40">last updated september 2026</p>
-          <div className="legal-copy mt-7">
+          <div className="mb-8 border-b border-[var(--sketch-border)] pb-7">
+            <p className="sketch-label text-[10px] tracking-[0.16em]">thyme · your data</p>
+            <h1 className="legal-page-title mt-3">privacy policy</h1>
+            <p className="legal-updated mt-4">last updated · september 2026</p>
+          </div>
+          <div className="legal-copy">
 
             <section className="legal-section">
               <h3 className="legal-section-title">account information</h3>
