@@ -124,7 +124,7 @@ function IntroGate({ onDone }: { onDone: () => void }) {
 
 /* ── Original CTA: hand-writes itself once on load — letters sketch in one-by-one,
    a squiggle underline draws beneath, then the full written label stays for good. ── */
-function HandwriteButton({ label, onClick }: { label: string; onClick: () => void }) {
+function HandwriteButton({ label, onClick, hideUnderline = false }: { label: string; onClick: () => void; hideUnderline?: boolean }) {
   const letters = useMemo(() => Array.from(label), [label]);
   const perLetter = 65;                                 // ms between letters
   const underlineAt = letters.length * perLetter + 320;  // underline starts after the "pen" finishes
@@ -137,11 +137,13 @@ function HandwriteButton({ label, onClick }: { label: string; onClick: () => voi
           <span key={i} style={{ animationDelay: `${i * perLetter}ms` }}>{ch}</span>
         ))}
       </span>
-      <svg className="handwrite-underline" viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M2 5.5 C 20 2.6, 40 7.4, 60 4.8 S 100 2.4, 118 5.6"
-          pathLength={1}
-          style={{ animationDelay: `${underlineAt}ms`, vectorEffect: "non-scaling-stroke" }} />
-      </svg>
+      {!hideUnderline && (
+        <svg className="handwrite-underline" viewBox="0 0 120 8" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M2 5.5 C 20 2.6, 40 7.4, 60 4.8 S 100 2.4, 118 5.6"
+            pathLength={1}
+            style={{ animationDelay: `${underlineAt}ms`, vectorEffect: "non-scaling-stroke" }} />
+        </svg>
+      )}
     </button>
   );
 }
@@ -679,7 +681,9 @@ export default function Landing() {
         <div className="mt-20 text-center">
           <p className="landing-kicker">start with one day.</p>
           <h2 className="hero-display text-4xl mt-2">make it a good one.</h2>
-          <HandwriteButton label="open thyme" onClick={() => navigate("/auth")} />
+          <div className="flex justify-center">
+            <HandwriteButton label="open thyme" onClick={() => navigate("/auth")} hideUnderline />
+          </div>
         </div>
 
         {/* Footer */}
