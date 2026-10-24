@@ -999,6 +999,37 @@ p.clayze-hero-copy,
   animation: now-pulse 2s ease-in-out infinite;
 }
 
+/* iPad layout: preserve phone and desktop sizing while using the wider tablet canvas. */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sketchbook > div.mx-auto {
+    max-width: 820px;
+    padding-inline: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .sketchbook > div.mx-auto > div.mt-8:has(> svg) {
+    margin-top: 2.5rem;
+  }
+
+  .sketchbook > div.mx-auto > div.mt-8:has(> svg) > div {
+    width: min(100%, 720px);
+    margin-inline: auto;
+  }
+
+  .sketchbook > div.mx-auto > div.mt-8:has(> svg) > div > svg {
+    max-height: min(76vw, 720px);
+  }
+
+  .sketchbook .composer,
+  .sketchbook .template-picker {
+    max-width: min(560px, calc(100vw - 4rem));
+    padding: 2rem;
+  }
+
+  .sketchbook .template-list {
+    max-height: min(58vh, 560px);
+  }
+}
+
 /* Smooth page wrapper */
 .sketchbook {
   animation: fade-in 0.35s ease-out;
