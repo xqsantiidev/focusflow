@@ -561,10 +561,11 @@ p.clayze-hero-copy,
   border: 1.5px solid var(--sketch-border);
   background: transparent;
   color: var(--sketch-muted);
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s, border-color 0.2s, background-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 .sketch-btn-icon:hover {
-  background: var(--sketch-hover);
+  background-color: var(--sketch-hover);
   color: var(--sketch-fg);
   transform: scale(1.08);
 }
@@ -583,10 +584,11 @@ p.clayze-hero-copy,
   font-size: 12px;
   font-weight: 500;
   color: var(--sketch-fg);
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s, border-color 0.2s, background-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 .sketch-btn:hover {
-  background: var(--sketch-hover);
+  background-color: var(--sketch-hover);
   transform: translateY(-1px);
 }
 .sketch-btn:active {
