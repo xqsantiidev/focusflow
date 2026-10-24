@@ -133,9 +133,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <div className="auth-email-field relative flex-1">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <span className="auth-email-placeholder" aria-hidden="true">
-                        <span className="auth-prompt-default">your email address</span>
-                        <span className="auth-prompt-typing">{"hello@thyme.app".split("").map((character, index) => (
-                          <span key={index} style={{ animationDelay: `${index * 85}ms` }}>{character}</span>
+                        <span className="auth-prompt-idle">your email address</span>
+                        <span className="auth-prompt-writing">{"enter your email".split("").map((character, index) => (
+                          <span key={index} style={{ animationDelay: `${index * 45}ms` }}>{character}</span>
                         ))}</span>
                       </span>
                       <Input

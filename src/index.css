@@ -322,7 +322,7 @@ p.clayze-hero-copy,
   background: transparent;
 }
 .auth-email-field .auth-email-input:focus,
-.auth-email-field .auth-email-input:not(:placeholder-shown) {
+.auth-email-field[data-has-value="true"] .auth-email-input {
   background: var(--sketch-bg);
 }
 .auth-email-placeholder {
@@ -335,41 +335,36 @@ p.clayze-hero-copy,
   color: var(--sketch-muted);
   font-family: 'Kalam', 'Shantell Sans Variable', cursive;
   font-size: 0.95rem;
-  opacity: 0.75;
   pointer-events: none;
   white-space: pre;
 }
-.auth-prompt-default,
-.auth-prompt-typing {
+.auth-prompt-idle,
+.auth-prompt-writing {
   position: absolute;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.2s ease;
 }
-.auth-prompt-typing { opacity: 0; }
-.auth-prompt-typing span {
+.auth-prompt-idle { opacity: 0.72; }
+.auth-prompt-writing { opacity: 0; }
+.auth-prompt-writing span {
   display: inline-block;
   opacity: 0;
-  animation: auth-type-char 0.08s steps(1, end) forwards;
 }
-.auth-email-field:focus-within .auth-prompt-default,
-.auth-email-field:focus-within .auth-prompt-typing,
-.auth-email-field:has(.auth-email-input:not(:placeholder-shown)) .auth-prompt-default,
-.auth-email-field:has(.auth-email-input:not(:placeholder-shown)) .auth-prompt-typing {
+.auth-email-field:focus-within .auth-prompt-idle {
   opacity: 0;
 }
-.auth-email-field:focus-within .auth-prompt-typing {
+.auth-email-field:focus-within .auth-prompt-writing {
   opacity: 1;
+}
+.auth-email-field:focus-within .auth-prompt-writing span {
+  animation: auth-type-char 0.12s steps(1, end) forwards;
 }
 @keyframes auth-type-char {
   to { opacity: 1; }
 }
-@media (hover: hover) {
-  .auth-email-field:not(:focus-within):hover .auth-prompt-default { opacity: 0; }
-  .auth-email-field:not(:focus-within):hover .auth-prompt-typing { opacity: 1; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .auth-prompt-default,
-  .auth-prompt-typing { transition: none; }
-  .auth-prompt-typing span { animation: none; opacity: 1; }
+  .auth-prompt-idle,
+  .auth-prompt-writing { transition: none; }
+  .auth-email-field:focus-within .auth-prompt-writing span { animation: none; opacity: 1; }
 }
 .auth-submit {
   width: 42px;
