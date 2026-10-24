@@ -677,11 +677,9 @@ export default function Landing() {
 
         {/* CTA */}
         <div className="mt-20 text-center">
-          <p className="sketch-label text-sm opacity-40">start with one day.</p>
+          <p className="landing-kicker">start with one day.</p>
           <h2 className="hero-display text-4xl mt-2">make it a good one.</h2>
-          <button onClick={() => navigate("/auth")} className="sketch-btn-primary mt-6">
-            open thyme
-          </button>
+          <HandwriteButton label="open thyme" onClick={() => navigate("/auth")} />
         </div>
 
         {/* Footer */}

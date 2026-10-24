@@ -703,6 +703,17 @@ p.clayze-hero-copy,
   text-wrap: balance;
 }
 
+/* Subtle handwritten landing-page kicker, distinct from the technical mono labels */
+.landing-kicker {
+  color: var(--sketch-muted);
+  font-family: 'Kalam', 'Shantell Sans Variable', cursive;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.015em;
+  line-height: 1.4;
+  opacity: 0.74;
+}
+
 /* Landing supporting copy — Kalam adds a readable, pen-written note to the sketchbook feel */
 .landing-support-copy {
   color: var(--sketch-fg);
