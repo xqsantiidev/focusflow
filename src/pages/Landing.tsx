@@ -503,7 +503,7 @@ export default function Landing() {
                 {f.icon}
               </motion.div>
               <h3 className="sketch-hand text-lg mt-2.5">{f.title}</h3>
-              <p className="sketch-body text-[12px] mt-0.5 opacity-50 leading-snug">{f.desc}</p>
+              <p className="landing-support-copy mt-1">{f.desc}</p>
               {i === 2 && (
                 <motion.button
                   onClick={() => showcaseRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
@@ -535,7 +535,7 @@ export default function Landing() {
             className="hero-display text-3xl sm:text-4xl text-center">everything you need.</motion.h2>
           <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 0.5 }} viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="sketch-body text-sm text-center mt-2 max-w-xs mx-auto">more features, less friction. plan faster, see clearer.</motion.p>
+            className="landing-support-copy text-center mt-2 max-w-xs mx-auto">more features, less friction. plan faster, see clearer.</motion.p>
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3">
             {([
@@ -635,7 +635,7 @@ export default function Landing() {
                   {f.icon}
                 </motion.div>
                 <h3 className="sketch-hand text-lg mt-2.5">{f.title}</h3>
-                <p className="sketch-body text-[11px] mt-0.5 opacity-45 leading-snug">{f.desc}</p>
+                <p className="landing-support-copy mt-1">{f.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -673,7 +673,7 @@ export default function Landing() {
                   ?
                 </div>
                 <h4 className="sketch-hand text-base">{item.q}</h4>
-                <p className="sketch-body text-[11px] mt-2 opacity-50 leading-relaxed">{item.a}</p>
+                <p className="landing-support-copy mt-2">{item.a}</p>
               </motion.div>
             ))}
           </div>
