@@ -132,16 +132,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <div className="relative flex items-center gap-2">
                     <div className="auth-email-field relative flex-1">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <span className="auth-email-placeholder" aria-hidden="true">
-                        <span className="auth-prompt-idle">your email address</span>
-                        <span className="auth-prompt-writing">{"enter your email".split("").map((character, index) => (
-                          <span key={index} style={{ animationDelay: `${index * 45}ms` }}>{character}</span>
-                        ))}</span>
-                      </span>
                       <Input
                         name="email"
                         placeholder=" "
                         type="email"
+                        onFocus={event => event.currentTarget.closest(".auth-email-field")?.classList.add("is-email-focused")}
+                        onBlur={event => event.currentTarget.closest(".auth-email-field")?.classList.remove("is-email-focused")}
                         className="pl-9 auth-email-input"
                         disabled={isLoading}
                         required

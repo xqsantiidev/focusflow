@@ -315,57 +315,7 @@ p.clayze-hero-copy,
   border-radius: 10px;
   background: var(--sketch-bg);
 }
-.auth-email-field .auth-email-input {
-  position: relative;
-  z-index: 1;
-  color: var(--sketch-fg);
-  background: transparent;
-}
-.auth-email-field .auth-email-input:focus,
-.auth-email-field[data-has-value="true"] .auth-email-input {
-  background: var(--sketch-bg);
-}
-.auth-email-placeholder {
-  position: absolute;
-  z-index: 2;
-  inset: 0 0 0 2.25rem;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  color: var(--sketch-muted);
-  font-family: 'Kalam', 'Shantell Sans Variable', cursive;
-  font-size: 0.95rem;
-  pointer-events: none;
-  white-space: pre;
-}
-.auth-prompt-idle,
-.auth-prompt-writing {
-  position: absolute;
-  transition: opacity 0.2s ease;
-}
-.auth-prompt-idle { opacity: 0.72; }
-.auth-prompt-writing { opacity: 0; }
-.auth-prompt-writing span {
-  display: inline-block;
-  opacity: 0;
-}
-.auth-email-field:focus-within .auth-prompt-idle {
-  opacity: 0;
-}
-.auth-email-field:focus-within .auth-prompt-writing {
-  opacity: 1;
-}
-.auth-email-field:focus-within .auth-prompt-writing span {
-  animation: auth-type-char 0.12s steps(1, end) forwards;
-}
-@keyframes auth-type-char {
-  to { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .auth-prompt-idle,
-  .auth-prompt-writing { transition: none; }
-  .auth-email-field:focus-within .auth-prompt-writing span { animation: none; opacity: 1; }
-}
+
 .auth-submit {
   width: 42px;
   height: 42px;
