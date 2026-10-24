@@ -160,8 +160,8 @@ export default function Landing() {
   /* ── Intro sequence: wheel loads → click-driven shatter story ── */
   type Phase = "drawing" | "ready" | "c1" | "c2" | "c3";
   const prefersReduced = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const introSeen = typeof window !== "undefined" && localStorage.getItem("thyme-intro-seen") === "1";
-  const [phase, setPhase] = useState<Phase>(prefersReduced || introSeen ? "c3" : "drawing");
+  // The logo gate is remembered separately; keep the wheel onboarding playable on every landing visit.
+  const [phase, setPhase] = useState<Phase>(prefersReduced ? "c3" : "drawing");
   const [healed, setHealed] = useState(prefersReduced); // wheel snaps back together
   const [picked, setPicked] = useState<number | null>(null); // task being "tapped" during tap-to-add
   const pickedRef = useRef<number | null>(null);
@@ -222,23 +222,14 @@ export default function Landing() {
     advance({ clientX: 0, clientY: 0 }, i);
   };
 
-  /* Raw pointerdown on the wrapper — fires for ready/c1 and for clicks on
-     empty space during c2.  Skips clicks that land on a segment path so
-     the path's own onClick (handleWedgeTap) handles it without conflict. */
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const handler = (e: PointerEvent) => {
-      const clickPhase = phase;
-      if (clickPhase !== "ready" && clickPhase !== "c1" && clickPhase !== "c2") return;
-      if (clickPhase === "c2" && pickedRef.current !== null) return;
-      if (clickPhase === "c2" && (e.target as Element)?.tagName === "path") return;
-      e.preventDefault();
-      advance({ clientX: e.clientX, clientY: e.clientY });
-    };
-    el.addEventListener("pointerdown", handler, { passive: false });
-    return () => el.removeEventListener("pointerdown", handler);
-  }, [phase]);
+  /* Click on the wheel advances the story; during tap-to-add, the wedge's own
+     click handler records the selection before this bubbles to the wrapper. */
+  const handleWheelClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (phase !== "ready" && phase !== "c1" && phase !== "c2") return;
+    if (phase === "c2" && pickedRef.current !== null) return;
+    if (phase === "c2" && (e.target as Element)?.tagName === "path") return;
+    advance({ clientX: e.clientX, clientY: e.clientY });
+  };
 
   /* Heal the wheel + glide down to the three feature cards (not past them) */
   const goToDetails = () => {
@@ -304,6 +295,7 @@ export default function Landing() {
           className="mt-14 select-none">
           <div
             ref={wrapperRef}
+            onClick={handleWheelClick}
             onMouseMove={phase === "c2" && picked === null ? e => setHovered(segmentAt(e.clientX, e.clientY)) : undefined}
             onMouseLeave={() => setHovered(null)}
             className={phase === "ready" || phase === "c1" || phase === "c2" ? "cursor-pointer" : "cursor-default"}>
