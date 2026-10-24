@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/input-otp";
 
 import { useAuth } from "@/hooks/use-auth";
-import logo from "@/assets/logo.svg";
+import { ThymeWordmark } from "@/components/ThymeWordmark";
 import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -105,27 +105,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-
-      
-      {/* Auth Content */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex items-center justify-center h-full flex-col">
-        <Card className="min-w-[350px] pb-0 border shadow-md">
+    <main className="sketchbook auth-page min-h-screen">
+      <div className="auth-layout">
+        <header className="auth-brand">
+          <button type="button" onClick={() => navigate("/")} aria-label="Thyme home">
+            <ThymeWordmark className="text-4xl" />
+          </button>
+          <p>make room for your day</p>
+        </header>
+        <Card className="auth-card w-full border">
           {step === "signIn" ? (
             <>
-              <CardHeader className="text-center">
-              <div className="flex justify-center">
-                    <img
-                      src={logo}
-                      alt="Lock Icon"
-                      width={64}
-                      height={64}
-                      className="rounded-lg mb-4 mt-4 cursor-pointer"
-                      onClick={() => navigate("/")}
-                    />
-                  </div>
-                <CardTitle className="text-xl">Get Started</CardTitle>
+              <CardHeader className="auth-card-header text-center">
+                <CardTitle className="auth-title">Get started</CardTitle>
                 <CardDescription>
                   Enter your email to log in or sign up
                 </CardDescription>
@@ -190,8 +182,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           ) : (
             <>
-              <CardHeader className="text-center mt-4">
-                <CardTitle>Check your email</CardTitle>
+              <CardHeader className="auth-card-header text-center">
+                <CardTitle className="auth-title">Check your email</CardTitle>
                 <CardDescription>
                   We've sent a code to {step.email}
                 </CardDescription>
@@ -272,7 +264,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </>
           )}
 
-          <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg space-y-1">
+          <div className="auth-card-footer py-4 px-6 text-xs text-center text-muted-foreground border-t space-y-1">
             <div>
               <button onClick={() => navigate("/privacy")} className="underline hover:text-primary transition-colors cursor-pointer">privacy</button>
               <span className="mx-1.5 opacity-30">·</span>
@@ -291,9 +283,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </div>
           </div>
         </Card>
-        </div>
       </div>
-    </div>
+    </main>
   );
 }
 
