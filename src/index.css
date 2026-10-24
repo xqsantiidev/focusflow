@@ -315,6 +315,62 @@ p.clayze-hero-copy,
   border-radius: 10px;
   background: var(--sketch-bg);
 }
+.auth-email-field .auth-email-input {
+  position: relative;
+  z-index: 1;
+  color: var(--sketch-fg);
+  background: transparent;
+}
+.auth-email-field .auth-email-input:focus,
+.auth-email-field .auth-email-input:not(:placeholder-shown) {
+  background: var(--sketch-bg);
+}
+.auth-email-placeholder {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 0 2.25rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: var(--sketch-muted);
+  font-family: 'Kalam', 'Shantell Sans Variable', cursive;
+  font-size: 0.95rem;
+  opacity: 0.75;
+  pointer-events: none;
+  white-space: pre;
+}
+.auth-prompt-default,
+.auth-prompt-typing {
+  position: absolute;
+  transition: opacity 0.18s ease;
+}
+.auth-prompt-typing { opacity: 0; }
+.auth-prompt-typing span {
+  display: inline-block;
+  opacity: 0;
+  animation: auth-type-char 0.08s steps(1, end) forwards;
+}
+.auth-email-field:focus-within .auth-prompt-default,
+.auth-email-field:focus-within .auth-prompt-typing,
+.auth-email-field:has(.auth-email-input:not(:placeholder-shown)) .auth-prompt-default,
+.auth-email-field:has(.auth-email-input:not(:placeholder-shown)) .auth-prompt-typing {
+  opacity: 0;
+}
+.auth-email-field:focus-within .auth-prompt-typing {
+  opacity: 1;
+}
+@keyframes auth-type-char {
+  to { opacity: 1; }
+}
+@media (hover: hover) {
+  .auth-email-field:not(:focus-within):hover .auth-prompt-default { opacity: 0; }
+  .auth-email-field:not(:focus-within):hover .auth-prompt-typing { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-prompt-default,
+  .auth-prompt-typing { transition: none; }
+  .auth-prompt-typing span { animation: none; opacity: 1; }
+}
 .auth-submit {
   width: 42px;
   height: 42px;

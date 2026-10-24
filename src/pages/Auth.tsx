@@ -130,13 +130,19 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <CardContent>
                   
                   <div className="relative flex items-center gap-2">
-                    <div className="relative flex-1">
+                    <div className="auth-email-field relative flex-1">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <span className="auth-email-placeholder" aria-hidden="true">
+                        <span className="auth-prompt-default">your email address</span>
+                        <span className="auth-prompt-typing">{"hello@thyme.app".split("").map((character, index) => (
+                          <span key={index} style={{ animationDelay: `${index * 85}ms` }}>{character}</span>
+                        ))}</span>
+                      </span>
                       <Input
                         name="email"
-                        placeholder="name@example.com"
+                        placeholder=" "
                         type="email"
-                        className="pl-9"
+                        className="pl-9 auth-email-input"
                         disabled={isLoading}
                         required
                       />
