@@ -43,6 +43,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   );
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
   const [otp, setOtp] = useState("");
+  const [emailValue, setEmailValue] = useState("");
+  const [emailFocused, setEmailFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,13 +133,22 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   
                   <div className="relative flex items-center gap-2">
                     <div className="auth-email-field relative flex-1">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Mail className="absolute left-3 top-3 z-[2] h-4 w-4 text-muted-foreground" />
+                      {!emailValue && (
+                        <span className={`auth-email-placeholder ${emailFocused ? "is-typing" : ""}`} aria-hidden="true">
+                          {emailFocused ? "hello@thyme.app".split("").map((character, index) => (
+                            <span key={index} style={{ animationDelay: `${index * 55}ms` }}>{character}</span>
+                          )) : <span>your email address</span>}
+                        </span>
+                      )}
                       <Input
                         name="email"
                         placeholder=" "
                         type="email"
-                        onFocus={event => event.currentTarget.closest(".auth-email-field")?.classList.add("is-email-focused")}
-                        onBlur={event => event.currentTarget.closest(".auth-email-field")?.classList.remove("is-email-focused")}
+                        value={emailValue}
+                        onChange={event => setEmailValue(event.target.value)}
+                        onFocus={() => setEmailFocused(true)}
+                        onBlur={() => setEmailFocused(false)}
                         className="pl-9 auth-email-input"
                         disabled={isLoading}
                         required

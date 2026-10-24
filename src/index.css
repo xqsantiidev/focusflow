@@ -315,7 +315,35 @@ p.clayze-hero-copy,
   border-radius: 10px;
   background: var(--sketch-bg);
 }
-
+.auth-email-field .auth-email-input {
+  background: var(--sketch-bg) !important;
+  color: var(--sketch-fg);
+}
+.auth-email-placeholder {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: 2.25rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: var(--sketch-muted);
+  font-family: 'Kalam', 'Shantell Sans Variable', cursive;
+  font-size: 0.95rem;
+  line-height: 1;
+  pointer-events: none;
+  white-space: pre;
+}
+.auth-email-placeholder.is-typing span {
+  display: inline-block;
+  opacity: 0;
+  animation: auth-type-char 0.1s steps(1, end) forwards;
+}
+@keyframes auth-type-char { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .auth-email-placeholder.is-typing span { animation: none; opacity: 1; }
+}
 .auth-submit {
   width: 42px;
   height: 42px;
