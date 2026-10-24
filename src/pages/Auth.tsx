@@ -176,7 +176,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full mt-4"
+                      className="auth-guest-button w-full mt-4"
                       onClick={handleGuestLogin}
                       disabled={isLoading}
                     >

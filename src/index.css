@@ -322,6 +322,11 @@ p.clayze-hero-copy,
   background: var(--sketch-fg);
   color: var(--sketch-bg);
 }
+.auth-guest-button {
+  font-family: 'Kalam', 'Shantell Sans Variable', cursive;
+  font-size: 1rem;
+  font-weight: 400;
+}
 .auth-divider {
   display: flex;
   align-items: center;
