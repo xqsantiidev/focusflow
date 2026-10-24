@@ -838,7 +838,7 @@ export default function Dashboard() {
           <motion.button whileHover={{ scale: 1.08, rotate: 90 }} whileTap={{ scale: 0.9, rotate: 45 }}
             transition={{ type: "spring", stiffness: 300, damping: 12 }}
             onClick={() => setEditing({ id: Date.now(), title: "", start: "12:00", end: "12:45", category: "Study", note: "", repeat: [], color: undefined })} className="sketch-fab">
-            <Plus className="size-5" />
+            <Plus className="size-6" strokeWidth={2.25} />
           </motion.button>
         </motion.div>
 
