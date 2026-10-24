@@ -479,6 +479,69 @@ p.clayze-hero-copy,
   .legal-copy { font-size: 1rem; }
 }
 
+/* Template picker: isolate transforms and keep scrolling inside the list, not the modal */
+.template-picker {
+  overflow: hidden;
+  transform: none;
+  backface-visibility: visible;
+}
+.template-list {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sketch-border) transparent;
+}
+.template-list::-webkit-scrollbar { width: 6px; }
+.template-list::-webkit-scrollbar-track { background: transparent; }
+.template-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--sketch-border);
+}
+.template-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--sketch-border);
+  border-radius: 12px;
+  background: var(--sketch-card);
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+.template-row:hover {
+  border-color: color-mix(in srgb, var(--sketch-fg) 24%, var(--sketch-border));
+  background: var(--sketch-hover);
+}
+.template-select {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.template-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.template-delete {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--sketch-muted);
+  opacity: 0.55;
+  transition: opacity 0.16s ease, background-color 0.16s ease;
+}
+.template-delete:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--sketch-border) 55%, transparent);
+}
+
 /* Cards */
 .sketch-card {
   background: var(--sketch-card);

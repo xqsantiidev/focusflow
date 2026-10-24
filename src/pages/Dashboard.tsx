@@ -845,11 +845,10 @@ export default function Dashboard() {
         {/* Template picker */}
         <AnimatePresence>
           {showTemplates && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5 backdrop-blur-[2px]">
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                className="composer w-full max-w-md">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}                className="fixed inset-0 z-30 grid place-items-center bg-black/20 p-5">
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="composer template-picker w-full max-w-md">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="sketch-title text-xl">templates</h2>
                   <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
@@ -858,21 +857,21 @@ export default function Dashboard() {
                 {templates.length === 0 ? (
                   <p className="sketch-body text-sm opacity-50 py-6 text-center">no templates yet — create a block and save it as a template.</p>
                 ) : (
-                  <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+                  <div className="template-list space-y-2 max-h-[50vh] overflow-y-auto">
                     {templates.map((t, i) => (
-                      <motion.button key={t.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        whileHover={{ scale: 1.02, x: 4 }} whileTap={{ scale: 0.98 }}
-                        onClick={() => applyTemplate(t)}
-                        className="w-full flex items-center gap-3 rounded-xl border border-[var(--sketch-border)] p-3 text-left hover:bg-[var(--sketch-hover)] transition">
-                        <span className="sketch-dot" style={{ backgroundColor: t.color || palette[t.category] }} />
-                        <div className="flex-1 min-w-0">
-                          <p className="sketch-title text-sm truncate">{t.title}</p>
-                          <p className="sketch-label text-[10px]">{fmtTime(t.start)} — {fmtTime(t.end)} · {t.category}</p>
-                        </div>
-                        <button onClick={e => { e.stopPropagation(); setTemplates(list => list.filter(x => x.id !== t.id)); void deleteCloudTemplate({ templateId: t.id }); }}
-                          className="text-[var(--sketch-muted)] opacity-40 hover:opacity-100"><Trash2 className="size-3" /></button>
-                      </motion.button>
+                      <motion.div key={t.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.035 }}
+                        className="template-row">
+                        <button type="button" onClick={() => applyTemplate(t)} className="template-select">
+                          <span className="sketch-dot shrink-0" style={{ backgroundColor: t.color || palette[t.category] }} />
+                          <span className="template-info">
+                            <span className="sketch-title text-sm truncate">{t.title}</span>
+                            <span className="sketch-label text-[10px] truncate">{fmtTime(t.start)} — {fmtTime(t.end)} · {t.category}</span>
+                          </span>
+                        </button>
+                        <button type="button" aria-label={`Delete ${t.title}`} onClick={() => { setTemplates(list => list.filter(x => x.id !== t.id)); void deleteCloudTemplate({ templateId: t.id }); }}
+                          className="template-delete"><Trash2 className="size-3" /></button>
+                      </motion.div>
                     ))}
                   </div>
                 )}
