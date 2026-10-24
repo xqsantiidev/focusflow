@@ -147,7 +147,11 @@ function HandwriteButton({ label, onClick }: { label: string; onClick: () => voi
 }
 
 export default function Landing() {
-  const [gate, setGate] = useState(true);
+  const [gate, setGate] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return !reducedMotion && localStorage.getItem("thyme-intro-seen") !== "1";
+  });
   const navigate = useNavigate();
   const showcaseRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);

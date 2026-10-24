@@ -8,55 +8,55 @@ export default function Privacy() {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
     <main className="sketchbook min-h-screen">
-      <div className="mx-auto max-w-[520px] px-6 pb-24 pt-10">
-        <header className="flex items-center justify-between mb-12">
+      <div className="mx-auto max-w-[680px] px-6 pb-24 pt-10">
+        <header className="flex items-center justify-between mb-8">
           <button onClick={() => navigate("/")} className="sketch-link text-sm">← back</button>
           <ThymeWordmark className="text-2xl" />
         </header>
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <motion.div className="legal-document" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <h1 className="sketch-title text-3xl">privacy policy</h1>
           <p className="sketch-label text-xs mt-2 opacity-40">last updated september 2026</p>
-          <div className="mt-8 space-y-8 sketch-body text-sm opacity-65 leading-relaxed">
+          <div className="legal-copy mt-7">
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">account information</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">account information</h3>
               <p>when you sign up, we collect your email address to create and authenticate your account. that's the only personal identifier we store.</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">schedule data</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">schedule data</h3>
               <p>everything you create in thyme — events, templates, categories, and color palettes — is stored on our servers and linked to your account. this data powers the app and stays private to you.</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">device location (optional)</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">device location (optional)</h3>
               <p>if you enable the sunrise/sunset shading feature in settings, thyme will request access to your device's location to calculate daylight hours for your area. this is entirely opt-in. your coordinates are stored locally on your device and are never sent to our servers. you can clear your saved location at any time from the settings panel.</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">how we use your data</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">how we use your data</h3>
               <p>your data is used solely to power thyme. we do not sell, share, or monetize your personal information. we do not run ads, and we do not track you across other sites or services.</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">data storage &amp; security</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">data storage &amp; security</h3>
               <p>your data is stored on our servers and is accessible only through your authenticated account. data sent between your device and our servers is encrypted in transit (TLS).</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">delete your account &amp; data</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">delete your account &amp; data</h3>
               <p>you can delete your account and all associated data at any time. to do so, visit the settings page in the app and tap <span className="font-medium">delete account</span>. this permanently removes your email, schedule, templates, categories, and preferences from our servers. this action cannot be undone.</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">age requirement</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">age requirement</h3>
               <p>you must be 13 or older to use thyme. we don't knowingly collect personal information from anyone under 13; if we learn an account belongs to a child under 13, we will delete it and its data.</p>
-            </div>
+            </section>
 
-            <div>
-              <h3 className="sketch-title text-base mb-2">contact</h3>
+            <section className="legal-section">
+              <h3 className="legal-section-title">contact</h3>
               <p>questions about this policy or your data? reach out at <span className="font-medium">thymeplanner.help@proton.me</span> and we'll get back to you promptly.</p>
-            </div>
+            </section>
 
           </div>
         </motion.div>
